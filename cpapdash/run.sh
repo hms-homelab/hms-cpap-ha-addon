@@ -101,13 +101,29 @@ fi
 # wizard writes setup_complete itself once it finishes.
 SETUP_COMPLETE=false
 MYAIR_DEVICE_TOKEN=""
+MYAIR_REFRESH_TOKEN=""
 if [ -f "$CONFIG" ]; then
     previous=$(jq -r '.setup_complete // false' "$CONFIG" 2>/dev/null || echo false)
     [ "$previous" = "true" ] && SETUP_COMPLETE=true
-    # Written BY the service after a successful myAir sign-in, not by the user.
-    # Losing it on a restart means ResMed emails a fresh code, which a headless
-    # add-on has no way to answer.
+    # Both of these are written BY the service after a successful myAir sign-in,
+    # not by the user, so they have to survive the config being regenerated.
+    #
+    # Losing the device token means ResMed emails a fresh code, which a headless
+    # add-on has no way to answer. Losing the REFRESH token is worse in a quieter
+    # way: the add-on would fall back to the password on every restart, so the
+    # password could never be removed from the options and the whole point of
+    # holding a revocable token instead would be lost.
     MYAIR_DEVICE_TOKEN=$(jq -r '.myair.device_token // ""' "$CONFIG" 2>/dev/null || echo "")
+    MYAIR_REFRESH_TOKEN=$(jq -r '.myair.refresh_token // ""' "$CONFIG" 2>/dev/null || echo "")
+fi
+
+# Once a refresh token exists the password is not needed and is not written into
+# the generated config at all. Users can clear it from the add-on options too,
+# and the add-on keeps working.
+if [ -n "$MYAIR_REFRESH_TOKEN" ] && [ -n "$MYAIR_PASSWORD" ]; then
+    echo "[cpapdash] myAir is already connected; ignoring the password in the options."
+    echo "[cpapdash] You can clear myair_password: it is no longer needed."
+    MYAIR_PASSWORD=""
 fi
 echo "[cpapdash] setup_complete=$SETUP_COMPLETE"
 
@@ -141,6 +157,7 @@ jq -n \
     --arg myair_username "$MYAIR_USERNAME" \
     --arg myair_password "$MYAIR_PASSWORD" \
     --arg myair_device_token "$MYAIR_DEVICE_TOKEN" \
+    --arg myair_refresh_token "$MYAIR_REFRESH_TOKEN" \
     '{
         device_id: "cpapdash_addon",
         device_name: $device_name,
@@ -173,6 +190,7 @@ jq -n \
             region: $myair_region,
             username: $myair_username,
             password: $myair_password,
+            refresh_token: $myair_refresh_token,
             device_token: $myair_device_token,
             poll_minutes: 60
         }
