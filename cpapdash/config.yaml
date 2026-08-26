@@ -1,0 +1,85 @@
+name: CpapDash
+slug: cpapdash
+version: "5.0.5"
+description: >-
+  Read your CPAP machine's SD card over WiFi and keep the whole night on your own
+  hardware. Charts, events, oximetry, PDF reports and native Home Assistant
+  sensors, with no cloud account anywhere in the path.
+url: https://github.com/hms-homelab/hms-cpap
+
+# No `image:` key on purpose, even though ghcr.io/hms-homelab/hms-cpap is public
+# and multi-arch. A pulled image runs its own ENTRYPOINT, which would leave the
+# options below collected by Home Assistant and read by nobody. The Dockerfile
+# beside this file is FROM that published image and adds only an entrypoint that
+# turns add-on options into CpapDash configuration, so the Supervisor's build is
+# a pull plus two small layers rather than a C++ compile.
+
+# amd64 and aarch64 only, matching the platforms the image is actually built for
+# (linux/amd64 and linux/arm64). That covers 64-bit Pi 3/4/5, x86 boxes, VMs,
+# Green and Yellow. armv7 would mean cross-building Drogon, libpqxx and libhpdf,
+# which is a different project.
+arch:
+  - amd64
+  - aarch64
+
+init: false
+ingress: true
+ingress_port: 8893
+panel_icon: mdi:sleep
+panel_title: CpapDash
+
+# /health already answers "can this be used", not merely "is a process alive"
+# (SDD-016), which is exactly what a watchdog should be pointed at.
+watchdog: "http://[HOST]:[PORT:8893]/health"
+
+# Optional direct access. Ingress does not need it, and leaving it unmapped is
+# the safer default, but a user who wants the API from another machine can map
+# a port in the add-on's Network panel.
+ports:
+  8893/tcp: null
+ports_description:
+  8893/tcp: Direct web UI and API access, bypassing Ingress. Leave empty to use Ingress only.
+
+# want, not need: CpapDash is fully usable through its own web UI with no
+# broker at all, so refusing to start without one would be wrong. When a broker
+# IS configured, its credentials are discovered rather than typed.
+services:
+  - mqtt:want
+
+# share, for users whose card contents arrive on a network share Home Assistant
+# already mounts. The ezShare and Fysetc sources are network protocols and need
+# no mapping at all, which is what makes this add-on straightforward.
+#
+# No addon_config mapping: the generated configuration and the SQLite database
+# live in the add-on's own /data, so there is nothing here for a person to edit
+# by hand and no empty folder inviting them to try.
+map:
+  - share:rw
+
+options:
+  source: ezshare
+  ezshare_url: http://192.168.4.1
+  local_dir: ""
+  burst_interval: 300
+  device_name: ResMed AirSense 10
+  database: sqlite
+  db_host: ""
+  db_port: 0
+  db_name: ""
+  db_user: ""
+  db_password: ""
+  log_level: info
+
+schema:
+  source: list(ezshare|local|fysetc)
+  ezshare_url: str?
+  local_dir: str?
+  burst_interval: int(30,86400)
+  device_name: str?
+  database: list(sqlite|postgresql|mysql)
+  db_host: str?
+  db_port: int(0,65535)?
+  db_name: str?
+  db_user: str?
+  db_password: password?
+  log_level: list(trace|debug|info|warning|error)
