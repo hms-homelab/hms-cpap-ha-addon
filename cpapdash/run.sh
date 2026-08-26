@@ -36,6 +36,16 @@ DB_PORT=$(opt '.db_port' '0')
 DB_NAME=$(opt '.db_name' '')
 DB_USER=$(opt '.db_user' '')
 DB_PASSWORD=$(opt '.db_password' '')
+MYAIR_ENABLED=$(opt '.myair_enabled' 'false')
+MYAIR_REGION=$(opt '.myair_region' 'NA')
+MYAIR_USERNAME=$(opt '.myair_username' '')
+MYAIR_PASSWORD=$(opt '.myair_password' '')
+
+# myAir needs both halves or it is not configured, whatever the toggle says.
+if [ "$MYAIR_ENABLED" = "true" ] && { [ -z "$MYAIR_USERNAME" ] || [ -z "$MYAIR_PASSWORD" ]; }; then
+    echo "[cpapdash] myair_enabled is on but the username or password is empty, leaving myAir off"
+    MYAIR_ENABLED=false
+fi
 
 # ---------------------------------------------------------------------------
 # MQTT, discovered rather than typed
@@ -78,11 +88,34 @@ if [ "$DB_TYPE" != "sqlite" ] && [ -z "$DB_HOST" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# First install runs the wizard
+# ---------------------------------------------------------------------------
+# On a first install there is no configuration yet, so setup_complete stays
+# false and opening the add-on lands on CpapDash's own setup wizard, with the
+# machine in front of the user and whatever they typed into the options already
+# filled in. That is a far better first run than a dashboard with no data and no
+# explanation of why.
+#
+# On every start after that the existing answer is preserved, because sending a
+# configured user back through the wizard on a restart would be absurd. The
+# wizard writes setup_complete itself once it finishes.
+SETUP_COMPLETE=false
+MYAIR_DEVICE_TOKEN=""
+if [ -f "$CONFIG" ]; then
+    previous=$(jq -r '.setup_complete // false' "$CONFIG" 2>/dev/null || echo false)
+    [ "$previous" = "true" ] && SETUP_COMPLETE=true
+    # Written BY the service after a successful myAir sign-in, not by the user.
+    # Losing it on a restart means ResMed emails a fresh code, which a headless
+    # add-on has no way to answer.
+    MYAIR_DEVICE_TOKEN=$(jq -r '.myair.device_token // ""' "$CONFIG" 2>/dev/null || echo "")
+fi
+echo "[cpapdash] setup_complete=$SETUP_COMPLETE"
+
+# ---------------------------------------------------------------------------
 # Write the configuration
 # ---------------------------------------------------------------------------
 # Built with jq rather than a heredoc so that a password containing a quote or a
-# backslash cannot produce a broken file. setup_complete is true because the
-# options above ARE the setup; the wizard stays reachable for anything else.
+# backslash cannot produce a broken file.
 mkdir -p "$CONFIG_DIR"
 jq -n \
     --arg device_name "$DEVICE_NAME" \
@@ -102,6 +135,12 @@ jq -n \
     --argjson mqtt_port "${MQTT_PORT:-1883}" \
     --arg mqtt_user "$MQTT_USER" \
     --arg mqtt_password "$MQTT_PASSWORD" \
+    --argjson setup_complete "$SETUP_COMPLETE" \
+    --argjson myair_enabled "$MYAIR_ENABLED" \
+    --arg myair_region "$MYAIR_REGION" \
+    --arg myair_username "$MYAIR_USERNAME" \
+    --arg myair_password "$MYAIR_PASSWORD" \
+    --arg myair_device_token "$MYAIR_DEVICE_TOKEN" \
     '{
         device_id: "cpapdash_addon",
         device_name: $device_name,
@@ -111,7 +150,7 @@ jq -n \
         burst_interval: $burst,
         web_port: 8893,
         static_dir: "/home/cpap/static/browser",
-        setup_complete: true,
+        setup_complete: $setup_complete,
         database: {
             type: $db_type,
             sqlite_path: $sqlite_path,
@@ -128,10 +167,18 @@ jq -n \
             username: $mqtt_user,
             password: $mqtt_password,
             client_id: "cpapdash_addon"
+        },
+        myair: {
+            enabled: $myair_enabled,
+            region: $myair_region,
+            username: $myair_username,
+            password: $myair_password,
+            device_token: $myair_device_token,
+            poll_minutes: 60
         }
     }' > "$CONFIG"
 
-echo "[cpapdash] source=$SOURCE database=$DB_TYPE"
+echo "[cpapdash] source=$SOURCE database=$DB_TYPE myair=$MYAIR_ENABLED"
 
 # exec, so signals reach the service and the Supervisor's stop is a clean stop
 # rather than a timeout followed by a kill.

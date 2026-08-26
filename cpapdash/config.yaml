@@ -56,6 +56,10 @@ services:
 map:
   - share:rw
 
+# Everything here is optional. Leave it as it comes and the first start opens
+# CpapDash's own setup wizard through Ingress, which walks through the source and
+# the database with the machine in front of you. Fill any of it in and the wizard
+# starts already populated.
 options:
   source: ezshare
   ezshare_url: http://192.168.4.1
@@ -68,6 +72,10 @@ options:
   db_name: ""
   db_user: ""
   db_password: ""
+  myair_enabled: false
+  myair_region: NA
+  myair_username: ""
+  myair_password: ""
   log_level: info
 
 schema:
@@ -82,4 +90,12 @@ schema:
   db_name: str?
   db_user: str?
   db_password: password?
+  # myAir is off unless you ask for it, and it is the only credential here that
+  # is an ACCOUNT password rather than a scoped secret, because ResMed offers
+  # nothing narrower. It buys you ResMed's own score for each night next to
+  # CpapDash's, which is only interesting if you have a myAir account at all.
+  myair_enabled: bool
+  myair_region: list(NA|EU)
+  myair_username: str?
+  myair_password: password?
   log_level: list(trace|debug|info|warning|error)

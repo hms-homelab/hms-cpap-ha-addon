@@ -22,8 +22,17 @@ privileged mode.
 1. Settings → Apps → ⋮ → Repositories, and add
    `https://github.com/hms-homelab/hms-cpap-ha-addon`
 2. Install **CpapDash** from the store.
-3. Set `source` and its address in Configuration.
-4. Start, then open the Web UI.
+3. Start it, then open the Web UI.
+
+**The first start opens CpapDash's own setup wizard**, which walks through the
+source and the database with the machine in front of you. You do not have to fill
+anything into Configuration first; if you do, the wizard starts already populated
+with it. Once the wizard finishes, later restarts go straight to the dashboard.
+
+Changing an option afterwards and restarting applies that option. Anything you
+change in CpapDash's own Settings page that is ALSO an add-on option will be
+overwritten on the next restart, so for those few settings the Configuration tab
+is the one that wins.
 
 ## Options
 
@@ -45,6 +54,20 @@ server and stores the database alongside the add-on's configuration, so it
 survives updates. The other two need `db_host` and friends filled in; if
 `db_host` is left empty the add-on falls back to SQLite rather than refusing to
 start.
+
+**`myair_enabled`**, **`myair_region`**, **`myair_username`**, **`myair_password`**
+Optional, off by default, and only worth switching on if you have a ResMed myAir
+account. CpapDash then reads your own nights back from ResMed and shows their
+score and its four sub-scores next to its own, per night and per component. Both
+halves of the credential are required; with either missing, myAir stays off.
+
+Region is `NA` or `EU`. `NA` has no email verification step, so sign-in is
+unattended. `EU` emails a code the first time, after which the remembered-device
+token is kept and it stops asking.
+
+Be aware of what this credential is: ResMed offers no scoped API key, so this is
+your actual myAir account password, stored in the add-on's own data directory.
+Nothing is ever written back to ResMed; the integration is read only.
 
 **`log_level`** Reserved for future use.
 
