@@ -66,6 +66,8 @@ options:
   local_dir: ""
   burst_interval: 300
   device_name: ResMed AirSense 10
+  device_id: ""
+  archive_dir: ""
   database: sqlite
   db_host: ""
   db_port: 0
@@ -84,6 +86,17 @@ schema:
   local_dir: str?
   burst_interval: int(30,86400)
   device_name: str?
+  # Both of these exist for moving an EXISTING install into Home Assistant.
+  #
+  # device_id is what every stored night is filed under, and every read filters
+  # on it. Left empty a new one is generated, which is right for a fresh
+  # install and catastrophic for a migration: point the add-on at a database
+  # full of history under another id and it shows an empty dashboard.
+  #
+  # archive_dir is where the card files are kept. Left empty they go to the
+  # add-on's own storage; set it to carry on writing where you already write.
+  device_id: str?
+  archive_dir: str?
   database: list(sqlite|postgresql|mysql)
   db_host: str?
   db_port: int(0,65535)?

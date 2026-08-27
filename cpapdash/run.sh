@@ -30,6 +30,23 @@ EZSHARE_URL=$(opt '.ezshare_url' '')
 LOCAL_DIR=$(opt '.local_dir' '')
 BURST=$(opt '.burst_interval' '300')
 DEVICE_NAME=$(opt '.device_name' 'CPAP')
+DEVICE_ID=$(opt '.device_id' '')
+ARCHIVE_DIR=$(opt '.archive_dir' '')
+
+# Every stored night is filed under device_id and every read filters on it, so a
+# migration that changes it silently shows an empty dashboard over a full
+# database. Left empty on a fresh install we generate one and keep it, rather
+# than generating a NEW one on every restart, which would scatter history across
+# a trail of device rows.
+if [ -z "$DEVICE_ID" ] && [ -f "$CONFIG" ]; then
+    DEVICE_ID=$(jq -r '.device_id // ""' "$CONFIG" 2>/dev/null || echo "")
+fi
+[ -n "$DEVICE_ID" ] || DEVICE_ID="cpapdash_addon"
+
+# Where the card files are kept. The add-on's own /data by default, which
+# survives updates; an explicit path is for carrying on writing where an
+# existing install already writes.
+[ -n "$ARCHIVE_DIR" ] || ARCHIVE_DIR="$CONFIG_DIR/cpap_archive"
 DB_TYPE=$(opt '.database' 'sqlite')
 DB_HOST=$(opt '.db_host' '')
 DB_PORT=$(opt '.db_port' '0')
@@ -135,6 +152,8 @@ echo "[cpapdash] setup_complete=$SETUP_COMPLETE"
 mkdir -p "$CONFIG_DIR"
 jq -n \
     --arg device_name "$DEVICE_NAME" \
+    --arg device_id "$DEVICE_ID" \
+    --arg archive_dir "$ARCHIVE_DIR" \
     --arg source "$SOURCE" \
     --arg ezshare_url "$EZSHARE_URL" \
     --arg local_dir "$LOCAL_DIR" \
@@ -159,8 +178,9 @@ jq -n \
     --arg myair_device_token "$MYAIR_DEVICE_TOKEN" \
     --arg myair_refresh_token "$MYAIR_REFRESH_TOKEN" \
     '{
-        device_id: "cpapdash_addon",
+        device_id: $device_id,
         device_name: $device_name,
+        archive_dir: $archive_dir,
         source: $source,
         ezshare_url: $ezshare_url,
         local_dir: $local_dir,
@@ -196,7 +216,11 @@ jq -n \
         }
     }' > "$CONFIG"
 
+mkdir -p "$ARCHIVE_DIR" 2>/dev/null || \
+    echo "[cpapdash] WARNING: cannot create $ARCHIVE_DIR. If it is on a network share, check it is mounted in Home Assistant under Settings, System, Storage."
+
 echo "[cpapdash] source=$SOURCE database=$DB_TYPE myair=$MYAIR_ENABLED"
+echo "[cpapdash] device_id=$DEVICE_ID archive=$ARCHIVE_DIR"
 
 # exec, so signals reach the service and the Supervisor's stop is a clean stop
 # rather than a timeout followed by a kill.

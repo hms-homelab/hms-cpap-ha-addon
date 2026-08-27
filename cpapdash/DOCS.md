@@ -73,6 +73,39 @@ Nothing is ever written back to ResMed; the integration is read only.
 
 **`log_level`** Reserved for future use.
 
+## Moving an existing install into Home Assistant
+
+If you already run CpapDash as a service or in Docker and want the add-on to take
+over, three settings decide whether it picks up your history or starts blank.
+
+**`device_id`** Every night is stored against this, and every read filters on it.
+Copy it from your existing `config.json`. Get this wrong and the dashboard is
+empty even though the database is full, because it is looking for a device that
+has no nights.
+
+**`database`** and its `db_*` fields. Point them at the same server you use now.
+Nothing needs migrating: the add-on reads and writes the same tables.
+
+**`archive_dir`** Where the card files live. Set it to the path you already use
+so the archive is not split in two.
+
+Then the mechanical part:
+
+1. Mount the share your card data lives on, under Settings, System, Storage, Add
+   network storage. Give it usage **Share**, and it appears to the add-on as
+   `/share/<name>`.
+2. Fill in the options above, using the `/share/...` path for `archive_dir` and,
+   if you use `local` as the source, for `local_dir` too.
+3. **Stop the old service first.** Two copies writing the same database and the
+   same archive will fight: both sweep, both parse, both insert.
+4. Start the add-on and open the Web UI. Your history should be there
+   immediately, because it was never moved.
+
+One thing to check if the source will not connect: an address ending in `.local`
+resolves by mDNS, which does not always work from inside a container. If your
+ezShare URL is a `.local` name and the add-on cannot reach it, use the IP
+address instead.
+
 ## Home Assistant entities
 
 If you have an MQTT broker, the add-on finds it by itself. There is nothing to
