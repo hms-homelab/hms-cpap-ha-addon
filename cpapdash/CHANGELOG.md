@@ -1,5 +1,19 @@
 # Changelog
 
+## 5.1.0
+
+Adds ResMed myAir, off by default. Connect it and CpapDash reads your own
+nights back from ResMed and shows their score next to its own, per night and per
+component. Read only: nothing is ever written back.
+
+Your myAir password is used once to sign in and is then erased. ResMed issues a
+revocable token that replaces it, which can only read this account's sleep data
+and cannot sign in as you anywhere. The add-on keeps that token across restarts,
+so once you are connected you can clear `myair_password` from the options.
+
+`NA` covers Australia as well as North America. `EU` emails a verification code
+the first time and then stops asking.
+
 ## 5.0.5
 
 First release of CpapDash as a Home Assistant add-on.

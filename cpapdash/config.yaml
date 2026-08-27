@@ -1,6 +1,6 @@
 name: CpapDash
 slug: cpapdash
-version: "5.0.5"
+version: "5.1.0"
 description: >-
   Read your CPAP machine's SD card over WiFi and keep the whole night on your own
   hardware. Charts, events, oximetry, PDF reports and native Home Assistant

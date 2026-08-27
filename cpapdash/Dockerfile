@@ -14,7 +14,7 @@
 # so the page loads through Ingress and then 404s every asset and every API call.
 # That is not a guess: an add-on built on 5.0.4 answered the header with an
 # unchanged base href, because the fix is not in it.
-FROM ghcr.io/hms-homelab/hms-cpap:5.0.5
+FROM ghcr.io/hms-homelab/hms-cpap:5.1.0
 
 # jq to read /data/options.json. curl is already present, since the image's own
 # HEALTHCHECK uses it, and the entrypoint uses it to ask the Supervisor for the
