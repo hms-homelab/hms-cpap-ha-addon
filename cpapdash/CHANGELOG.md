@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.1.0-2
+## 5.1.1
 
 The add-on no longer overwrites your CpapDash configuration on every start. It
 writes only the settings it actually exposes and leaves the rest of the file
