@@ -1,6 +1,9 @@
 name: CpapDash
 slug: cpapdash
-version: "5.1.0"
+# The version before the dash is the CpapDash release this packages; the number
+# after it is a revision of the packaging alone, when the add-on changes but the
+# application it wraps does not.
+version: "5.1.0-2"
 description: >-
   Read your CPAP machine's SD card over WiFi and keep the whole night on your own
   hardware. Charts, events, oximetry, PDF reports and native Home Assistant

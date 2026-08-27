@@ -31,6 +31,7 @@ LOCAL_DIR=$(opt '.local_dir' '')
 BURST=$(opt '.burst_interval' '300')
 DEVICE_NAME=$(opt '.device_name' 'CPAP')
 DEVICE_ID=$(opt '.device_id' '')
+DEVICE_ID_FROM_OPTIONS="$DEVICE_ID"
 ARCHIVE_DIR=$(opt '.archive_dir' '')
 
 # Every stored night is filed under device_id and every read filters on it, so a
@@ -116,7 +117,18 @@ fi
 # On every start after that the existing answer is preserved, because sending a
 # configured user back through the wizard on a restart would be absurd. The
 # wizard writes setup_complete itself once it finishes.
+#
+# The one first start that must NOT open the wizard is a migration. Typing a
+# device_id into the options is something only a person moving an existing
+# install ever does: it is the id their history is already filed under, and they
+# had to go and find it. Their database is populated and their source is already
+# working, so answering the wizard's questions again buys nothing, and the wizard
+# offering to generate a new id is the exact mistake that would hide their data.
 SETUP_COMPLETE=false
+if [ -n "$DEVICE_ID_FROM_OPTIONS" ]; then
+    echo "[cpapdash] device_id given in the options, treating this as a migration"
+    SETUP_COMPLETE=true
+fi
 MYAIR_DEVICE_TOKEN=""
 MYAIR_REFRESH_TOKEN=""
 if [ -f "$CONFIG" ]; then
@@ -145,11 +157,26 @@ fi
 echo "[cpapdash] setup_complete=$SETUP_COMPLETE"
 
 # ---------------------------------------------------------------------------
-# Write the configuration
+# Write the configuration, by MERGING rather than replacing
 # ---------------------------------------------------------------------------
+# CpapDash's configuration is much larger than what this add-on exposes: the LLM
+# settings, SleepHQ, ML training, the agent, oximetry, logging, sleep staging and
+# the cloud mirror all live in the same file. An earlier version of this script
+# wrote a fresh config on every start, which silently discarded every one of
+# them, and would have thrown away a migrated install's entire tuning on its
+# first restart.
+#
+# So the options below are an OVERLAY on whatever is already there. Anything the
+# add-on does not own is preserved untouched, which is also what makes importing
+# an existing config.json a supported way to move in.
+#
 # Built with jq rather than a heredoc so that a password containing a quote or a
 # backslash cannot produce a broken file.
 mkdir -p "$CONFIG_DIR"
+
+BASE="$CONFIG_DIR/.config.base.json"
+if [ -f "$CONFIG" ]; then cp "$CONFIG" "$BASE"; else echo '{}' > "$BASE"; fi
+
 jq -n \
     --arg device_name "$DEVICE_NAME" \
     --arg device_id "$DEVICE_ID" \
@@ -197,14 +224,6 @@ jq -n \
             user: $db_user,
             password: $db_password
         },
-        mqtt: {
-            enabled: $mqtt_enabled,
-            broker: $mqtt_host,
-            port: $mqtt_port,
-            username: $mqtt_user,
-            password: $mqtt_password,
-            client_id: "cpapdash_addon"
-        },
         myair: {
             enabled: $myair_enabled,
             region: $myair_region,
@@ -214,7 +233,34 @@ jq -n \
             device_token: $myair_device_token,
             poll_minutes: 60
         }
-    }' > "$CONFIG"
+    }
+    # An empty option must not clobber a real value that is already there. That
+    # is what lets someone fill in three options and keep everything else an
+    # imported configuration brought with it. Booleans and numbers survive:
+    # only empty strings and nulls are dropped.
+    | with_entries(select(.value != "" and .value != null))
+    | (.database |= with_entries(select(.value != "" and .value != null)))
+    | (.myair   |= with_entries(select(.value != "" and .value != null)))
+
+    # MQTT only when the Supervisor actually offered a broker. Otherwise leave
+    # whatever is configured alone: an install migrating in may point at a
+    # broker elsewhere on the network, and overwriting that with "none" is
+    # exactly how its Home Assistant entities silently disappear.
+    | . + (if $mqtt_enabled then {
+        mqtt: {
+            enabled: true,
+            broker: $mqtt_host,
+            port: $mqtt_port,
+            username: $mqtt_user,
+            password: $mqtt_password,
+            client_id: "cpapdash_addon"
+        }
+      } else {} end)
+    ' > "$CONFIG_DIR/.config.overlay.json"
+
+# Recursive merge, overlay wins. Everything the add-on does not set survives.
+jq -s '.[0] * .[1]' "$BASE" "$CONFIG_DIR/.config.overlay.json" > "$CONFIG"
+rm -f "$BASE" "$CONFIG_DIR/.config.overlay.json"
 
 mkdir -p "$ARCHIVE_DIR" 2>/dev/null || \
     echo "[cpapdash] WARNING: cannot create $ARCHIVE_DIR. If it is on a network share, check it is mounted in Home Assistant under Settings, System, Storage."

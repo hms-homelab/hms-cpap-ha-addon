@@ -34,6 +34,12 @@ change in CpapDash's own Settings page that is ALSO an add-on option will be
 overwritten on the next restart, so for those few settings the Configuration tab
 is the one that wins.
 
+Everything else you set in CpapDash's Settings page survives restarts untouched.
+The add-on writes only the keys it owns and leaves the rest of the configuration
+alone, so the LLM, SleepHQ, oximetry, ML training, sleep staging and agent
+settings are yours to change in the UI. An option you leave empty does not blank
+out a value that is already there either; it simply is not applied.
+
 ## Options
 
 **`source`** (`ezshare`, `local`, `fysetc`) Where the nights come from.
@@ -78,6 +84,10 @@ Nothing is ever written back to ResMed; the integration is read only.
 If you already run CpapDash as a service or in Docker and want the add-on to take
 over, three settings decide whether it picks up your history or starts blank.
 
+Filling in `device_id` is also what tells the add-on this is a migration rather
+than a first install, so it goes straight to the dashboard instead of opening the
+setup wizard.
+
 **`device_id`** Every night is stored against this, and every read filters on it.
 Copy it from your existing `config.json`. Get this wrong and the dashboard is
 empty even though the database is full, because it is looking for a device that
@@ -105,6 +115,28 @@ One thing to check if the source will not connect: an address ending in `.local`
 resolves by mDNS, which does not always work from inside a container. If your
 ezShare URL is a `.local` name and the add-on cannot reach it, use the IP
 address instead.
+
+### Bringing the rest of your settings with you
+
+The options above cover the source, the database and the archive. Everything else
+you had tuned, the LLM, SleepHQ, oximetry, ML training, sleep staging, logging
+and the agent, lives in your old `config.json` and has no option here.
+
+Copy that file in and it is kept. The add-on merges its options onto whatever it
+finds, so:
+
+1. Stop the add-on.
+2. Copy your old `config.json` into the add-on's data directory, over
+   `/addon_configs/.../config.json` if you have the Terminal add-on, or from the
+   host with `docker cp`.
+3. Start it again.
+
+The add-on then rewrites only the keys it owns and leaves the rest exactly as it
+found them. Your MQTT block is one of those: if Home Assistant offers a broker
+the add-on uses it, and if it does not, whatever broker you already point at is
+left alone. That is deliberate, because a migrating install often talks to a
+broker elsewhere on the network, and quietly switching it off is how the sensors
+would disappear the moment you moved in.
 
 ## Home Assistant entities
 

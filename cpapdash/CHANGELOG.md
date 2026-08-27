@@ -1,5 +1,24 @@
 # Changelog
 
+## 5.1.0-2
+
+The add-on no longer overwrites your CpapDash configuration on every start. It
+writes only the settings it actually exposes and leaves the rest of the file
+alone, so the LLM, SleepHQ, oximetry, ML training, sleep staging, logging and
+agent settings you set in CpapDash's own Settings page now survive a restart. An
+option you leave empty no longer blanks out a value that is already there.
+
+This matters most when moving an existing install in: copy your old
+`config.json` into the add-on's data directory and everything in it is kept.
+
+Your MQTT settings are part of that. Home Assistant's broker is used when it
+offers one, and when it does not, whatever broker you already point at is left
+untouched instead of being switched off. Previously an install talking to a
+broker elsewhere on the network lost every sensor on the first restart.
+
+Filling in `device_id` now also skips the setup wizard, since only someone
+migrating an existing install ever types one in.
+
 ## 5.1.0
 
 Adds ResMed myAir, off by default. Connect it and CpapDash reads your own
