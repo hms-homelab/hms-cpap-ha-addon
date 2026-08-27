@@ -61,9 +61,11 @@ account. CpapDash then reads your own nights back from ResMed and shows their
 score and its four sub-scores next to its own, per night and per component. Both
 halves of the credential are required; with either missing, myAir stays off.
 
-Region is `NA` or `EU`. `NA` has no email verification step, so sign-in is
-unattended. `EU` emails a code the first time, after which the remembered-device
-token is kept and it stops asking.
+Region is `NA` or `EU`. **`NA` covers North America and Australia**: ResMed serves
+Australian accounts from the North American endpoints, so there is no third
+option to pick. `NA` has no email verification step, so sign-in is unattended.
+`EU` emails a code the first time, after which the remembered-device token is
+kept and it stops asking.
 
 Be aware of what this credential is: ResMed offers no scoped API key, so this is
 your actual myAir account password, stored in the add-on's own data directory.
