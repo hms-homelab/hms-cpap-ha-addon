@@ -41,7 +41,11 @@ jobs:
 
           LATEST=$(gh api repos/hms-homelab/hms-cpap/releases/latest --jq .tag_name | sed 's/^v//')
           CURRENT=$(grep -oE '^version: *"[^"]+"' "$CFG" | head -1 | cut -d'"' -f2)
-          IMAGE=$(grep -oE 'ghcr\.io/hms-homelab/hms-cpap:[^ ]+' "$DOCKERFILE" | head -1 | cut -d: -f3)
+          # -f2, not -f3: "ghcr.io/hms-homelab/hms-cpap:5.1.6" has ONE colon, so
+          # the tag is the second field. -f3 returned empty, which made the
+          # already-up-to-date check below never match and drove the job into a
+          # commit with nothing staged.
+          IMAGE=$(grep -oE 'ghcr\.io/hms-homelab/hms-cpap:[^ ]+' "$DOCKERFILE" | head -1 | cut -d: -f2)
           echo "latest CpapDash release: $LATEST"
           echo "add-on version: $CURRENT   pinned image: $IMAGE"
 
@@ -78,6 +82,16 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$DOCKERFILE" "$CFG"
+
+          # Belt and braces under `set -e`: git commit exits 1 on an empty index,
+          # which would fail the job for the entirely normal case of there being
+          # nothing to do. The check above should already have exited, but this
+          # one cannot be fooled by a parse that silently returned nothing.
+          if git diff --cached --quiet; then
+            echo "Nothing staged; already up to date."
+            exit 0
+          fi
+
           git commit \
             -m "Track CpapDash ${LATEST}" \
             -m "Both values move together: the Dockerfile tag decides which image is built, and the config.yaml version is what makes the Supervisor offer the update. The image was confirmed present on ghcr before pointing at it."
