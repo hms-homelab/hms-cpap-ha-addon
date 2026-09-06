@@ -1,0 +1,84 @@
+name: Track CpapDash releases
+
+# Keep this add-on pointed at the newest CpapDash release.
+#
+# WHY THIS REPO PULLS RATHER THAN hms-cpap PUSHING. The obvious design is a job
+# in the hms-cpap release workflow that pushes here on every tag. It needs a
+# credential: GITHUB_TOKEN is scoped to the repository it runs in and cannot
+# write to another one. That means a PAT stored as a secret in hms-cpap, and a
+# PAT broad enough to push here is broad enough to be worth stealing — any
+# workflow in that repo could read it.
+#
+# Pulling needs nothing. This repo's own GITHUB_TOKEN can write to this repo,
+# and the things it reads (the hms-cpap release list, the public image manifest)
+# need no authentication at all. The cost is that it is polled rather than
+# instant, which for an add-on update is not a cost worth a shared credential.
+#
+# It drifted five releases before anyone noticed, so anything that closes the
+# gap automatically is the win; six hours versus six seconds is not the point.
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Point the add-on at the newest CpapDash release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          CFG=cpapdash/config.yaml
+          DOCKERFILE=cpapdash/Dockerfile
+
+          LATEST=$(gh api repos/hms-homelab/hms-cpap/releases/latest --jq .tag_name | sed 's/^v//')
+          CURRENT=$(grep -oE '^version: *"[^"]+"' "$CFG" | head -1 | cut -d'"' -f2)
+          IMAGE=$(grep -oE 'ghcr\.io/hms-homelab/hms-cpap:[^ ]+' "$DOCKERFILE" | head -1 | cut -d: -f3)
+          echo "latest CpapDash release: $LATEST"
+          echo "add-on version: $CURRENT   pinned image: $IMAGE"
+
+          if [ -z "$LATEST" ]; then
+            echo "Could not read the latest release; leaving everything alone."
+            exit 0
+          fi
+          if [ "$CURRENT" = "$LATEST" ] && [ "$IMAGE" = "$LATEST" ]; then
+            echo "Already tracking $LATEST."
+            exit 0
+          fi
+
+          # NEVER point at an image that is not there. A tag whose Docker publish
+          # failed would otherwise break every add-on build, and the Supervisor
+          # builds locally on each user's box, so the failure would land on them
+          # rather than in CI where someone would see it.
+          TOKEN=$(curl -fsS "https://ghcr.io/token?scope=repository:hms-homelab/hms-cpap:pull&service=ghcr.io" | jq -r .token)
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' \
+                   -H "Authorization: Bearer $TOKEN" \
+                   -H "Accept: application/vnd.oci.image.index.v1+json" \
+                   "https://ghcr.io/v2/hms-homelab/hms-cpap/manifests/${LATEST}")
+          if [ "$CODE" != "200" ]; then
+            echo "::warning::Release $LATEST has no published image (manifest HTTP $CODE). Not bumping."
+            exit 0
+          fi
+
+          sed -i -E "s|(FROM ghcr\.io/hms-homelab/hms-cpap:).*|\1${LATEST}|" "$DOCKERFILE"
+          sed -i -E "s|^(version: *\").*(\")|\1${LATEST}\2|" "$CFG"
+
+          # Prove the edits landed. sed exits 0 for a pattern that matched nothing.
+          grep -q "hms-cpap:${LATEST}$" "$DOCKERFILE" || { echo "Dockerfile FROM not updated"; exit 1; }
+          grep -q "^version: \"${LATEST}\"" "$CFG"    || { echo "config.yaml version not updated"; exit 1; }
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$DOCKERFILE" "$CFG"
+          git commit \
+            -m "Track CpapDash ${LATEST}" \
+            -m "Both values move together: the Dockerfile tag decides which image is built, and the config.yaml version is what makes the Supervisor offer the update. The image was confirmed present on ghcr before pointing at it."
+          git push
