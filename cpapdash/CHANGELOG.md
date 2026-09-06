@@ -1,5 +1,27 @@
 # Changelog
 
+## 5.1.6
+
+Catches the add-on up with CpapDash. It was pinned to the 5.1.0 image and had
+stayed there through five releases, so everything below has been shipping to
+everyone else and not to add-on users.
+
+- **Five languages** across the whole interface: English, Spanish, French,
+  Portuguese and Hungarian.
+- **Sefam S.Box cards can be read**, with apnea detection.
+- **The card is no longer re-read from end to end on every beat.** CSL and EVE
+  files are fetched only when the card's own timestamp shows they were
+  rewritten. This is a correctness fix as much as a saving: an EVE grows by one
+  small record per scored event, the card's directory listing rounds every size
+  to a whole kilobyte, and 46% of nights never cross that first kilobyte at all.
+  Size could not see an apnea being recorded. The timestamp can.
+- **The dashboard says which night it is showing**, with the year, in your own
+  language, and says how old it is once it is no longer current.
+- **Angular patched** to 21.2.22, clearing every outstanding advisory.
+
+From this release the add-on is bumped automatically whenever CpapDash is
+released, so it cannot silently fall behind again.
+
 ## 5.1.1
 
 The add-on no longer overwrites your CpapDash configuration on every start. It
