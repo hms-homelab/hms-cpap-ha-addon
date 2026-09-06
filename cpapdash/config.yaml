@@ -37,13 +37,25 @@ panel_title: CpapDash
 # (SDD-016), which is exactly what a watchdog should be pointed at.
 watchdog: "http://[HOST]:[PORT:8893]/health"
 
-# Optional direct access. Ingress does not need it, and leaving it unmapped is
-# the safer default, but a user who wants the API from another machine can map
-# a port in the add-on's Network panel.
+# 8893 is optional: Ingress does not need it, and leaving it unmapped is the
+# safer default, but a user who wants the API from another machine can map it in
+# the add-on's Network panel.
+#
+# 9000 is NOT optional when source is fysetc, and that is the one asymmetry on
+# this page worth reading twice. Every other source CpapDash supports is
+# outbound: it goes to the card and pulls. The Fysetc board is the other way
+# round, it dials in, so CpapDash is the SERVER and the container has to publish
+# a port or nothing on the network can reach it. Left unmapped the board retries
+# forever against a closed port and the add-on looks fine from the inside.
 ports:
   8893/tcp: null
+  9000/tcp: null
 ports_description:
   8893/tcp: Direct web UI and API access, bypassing Ingress. Leave empty to use Ingress only.
+  9000/tcp: >-
+    Where a Fysetc SD WiFi Pro connects in. REQUIRED when source is fysetc: map
+    it to 9000 and point the board's destination at this machine. Ignored for
+    every other source.
 
 # want, not need: CpapDash is fully usable through its own web UI with no
 # broker at all, so refusing to start without one would be wrong. When a broker
@@ -52,8 +64,11 @@ services:
   - mqtt:want
 
 # share, for users whose card contents arrive on a network share Home Assistant
-# already mounts. The ezShare and Fysetc sources are network protocols and need
-# no mapping at all, which is what makes this add-on straightforward.
+# already mounts. ezShare is a network protocol and needs no mapping at all.
+#
+# This used to say the same of Fysetc, and that was wrong in a way that made the
+# source silently non-functional: ezShare is polled OUTBOUND, while the Fysetc
+# board connects IN, so it needs a published port. See `ports` above.
 #
 # No addon_config mapping: the generated configuration and the SQLite database
 # live in the add-on's own /data, so there is nothing here for a person to edit

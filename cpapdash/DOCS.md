@@ -11,11 +11,19 @@ A way for the add-on to reach the card. CpapDash supports three:
 | Source | What it is |
 |---|---|
 | `ezshare` | An ez Share WiFi SD card, or the CpapDash Push kit, serving the card over HTTP |
-| `fysetc` | A Fysetc SD WiFi Pro, which connects out to CpapDash rather than being polled |
+| `fysetc` | A Fysetc SD WiFi Pro, which connects in to CpapDash rather than being polled |
 | `local` | A directory Home Assistant can already see, e.g. a mounted network share |
 
 All three are network paths, so the add-on needs no USB device mapping and no
 privileged mode.
+
+`fysetc` has one setup step the others do not, and it is easy to miss because
+nothing errors when it is skipped. The board dials in, so CpapDash is the server
+and the add-on has to publish the port it listens on: open the add-on's
+**Network** panel and map **9000** to host port **9000**, then point the board's
+destination at this machine's IP on that port. Leave it unmapped and the board
+retries forever against a closed port while the add-on log looks perfectly
+healthy, because from the inside nothing is wrong.
 
 ## Installation
 

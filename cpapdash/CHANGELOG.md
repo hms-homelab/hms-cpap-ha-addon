@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+- **The `fysetc` source now actually works.** It has been selectable since the
+  add-on shipped and could never have collected a night, for two independent
+  reasons, neither of which produced an error.
+
+  `run.sh` set `source` and never wrote the `fysetc` block, and
+  `AppConfig::fysetc.enabled` defaults to false, so the TCP server never
+  started. The add-on reported the source it had been handed and simply never
+  listened. It is now derived from `source` rather than exposed as its own
+  toggle, because two controls that must agree are one control and a bug, and it
+  is written on every start including when false, so switching the source away
+  from fysetc stops the server instead of leaving it listening.
+
+  Separately, port 9000 was not published. Every other source CpapDash supports
+  is outbound; the Fysetc board dials IN, so CpapDash is the server and the
+  container has to publish a port or nothing on the network can reach it. The
+  config comment asserted the opposite ("the ezShare and Fysetc sources are
+  network protocols and need no mapping at all"), which was true of ezShare and
+  wrong of Fysetc, while DOCS.md one file over described the inbound direction
+  correctly.
+
+  **Existing installs must map 9000 in the add-on's Network panel.** A new port
+  declaration does not publish itself, and the symptom of not doing it is the
+  board retrying forever against a closed port while the add-on log looks
+  healthy.
+
 ## 5.1.6
 
 Catches the add-on up with CpapDash. It was pinned to the 5.1.0 image and had

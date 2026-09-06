@@ -232,6 +232,29 @@ jq -n \
             refresh_token: $myair_refresh_token,
             device_token: $myair_device_token,
             poll_minutes: 60
+        },
+        # Setting source to "fysetc" was not enough on its own, and the failure
+        # was silent. AppConfig::fysetc.enabled defaults to FALSE, and nothing
+        # here wrote the block, so the TCP server never started: the add-on
+        # reported the source it had been given and simply never listened.
+        #
+        # Derived from source rather than exposed as its own toggle, because two
+        # controls that must agree are one control and a bug. Written on every
+        # start including when it is false, so switching the source AWAY from
+        # fysetc actually stops the server (BurstCollectorService acts on that
+        # transition) instead of leaving it listening.
+        #
+        # The port is fixed at 9000 inside the container and mapped in the
+        # Network panel, the same way 8893 is. A configurable inner port would
+        # have to agree with a static ports: declaration that cannot see it.
+        #
+        # NOTE: no apostrophes anywhere in this jq program. It is inside a
+        # single-quoted shell string, so one would end the string and the error
+        # lands somewhere further down that looks unrelated.
+        fysetc: {
+            enabled: ($source == "fysetc"),
+            listen_port: 9000,
+            listen_bind: "0.0.0.0"
         }
     }
     # An empty option must not clobber a real value that is already there. That
