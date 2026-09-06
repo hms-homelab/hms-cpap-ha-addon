@@ -5,7 +5,7 @@ slug: cpapdash
 # tag on every v* tag, so they no longer drift apart. They CAN still differ
 # deliberately, as 5.1.1-over-5.1.0 did when the add-on changed and the
 # application it wraps did not.
-version: "5.2.0"
+version: "5.2.1"
 description: >-
   Read your CPAP machine's SD card over WiFi and keep the whole night on your own
   hardware. Charts, events, oximetry, PDF reports and native Home Assistant
