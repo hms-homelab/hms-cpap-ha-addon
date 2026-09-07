@@ -20,12 +20,15 @@
   config comment asserted the opposite ("the ezShare and Fysetc sources are
   network protocols and need no mapping at all"), which was true of ezShare and
   wrong of Fysetc, while DOCS.md one file over described the inbound direction
-  correctly.
+  correctly. Ingress is no help either: it proxies the web UI on 8893 and knows
+  nothing about a raw TCP listener.
 
-  **Existing installs must map 9000 in the add-on's Network panel.** A new port
-  declaration does not publish itself, and the symptom of not doing it is the
-  board retrying forever against a closed port while the add-on log looks
-  healthy.
+  **9000 is now published on host port 9000 by default**, so the add-on listens
+  for the board with no Network-panel step. That reaches existing installs too:
+  since Supervisor 2026.07 a saved Network panel is merged over the add-on's
+  defaults instead of replacing them. On an older Supervisor that had the panel
+  saved, map 9000 by hand; the symptom of not doing it is the board retrying
+  forever against a closed port while the add-on log looks healthy.
 
 ## 5.1.6
 

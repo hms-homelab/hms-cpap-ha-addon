@@ -17,13 +17,17 @@ A way for the add-on to reach the card. CpapDash supports three:
 All three are network paths, so the add-on needs no USB device mapping and no
 privileged mode.
 
-`fysetc` has one setup step the others do not, and it is easy to miss because
-nothing errors when it is skipped. The board dials in, so CpapDash is the server
-and the add-on has to publish the port it listens on: open the add-on's
-**Network** panel and map **9000** to host port **9000**, then point the board's
-destination at this machine's IP on that port. Leave it unmapped and the board
-retries forever against a closed port while the add-on log looks perfectly
-healthy, because from the inside nothing is wrong.
+`fysetc` is the one source where the connection comes the other way. The board
+dials in, so CpapDash is the server, and the add-on publishes port **9000** on
+this machine by default. Point the board's destination at this machine's IP on
+that port. Ingress does not cover it: Ingress proxies the web UI, and this is a
+raw TCP listener.
+
+Check the add-on's **Network** panel once after updating: **9000** should show as
+mapped to host port **9000**. It will be, unless you are on a Supervisor older
+than 2026.07 and had saved that panel before, in which case map it by hand. Leave
+it unmapped and the board retries forever against a closed port while the add-on
+log looks perfectly healthy, because from the inside nothing is wrong.
 
 ## Installation
 
