@@ -5,19 +5,31 @@ slug: cpapdash
 # tag on every v* tag, so they no longer drift apart. They CAN still differ
 # deliberately, as 5.1.1-over-5.1.0 did when the add-on changed and the
 # application it wraps did not.
-version: "5.2.11"
+version: "5.2.15"
 description: >-
   Read your CPAP machine's SD card over WiFi and keep the whole night on your own
   hardware. Charts, events, oximetry, PDF reports and native Home Assistant
   sensors, with no cloud account anywhere in the path.
 url: https://github.com/hms-homelab/hms-cpap
 
-# No `image:` key on purpose, even though ghcr.io/hms-homelab/hms-cpap is public
-# and multi-arch. A pulled image runs its own ENTRYPOINT, which would leave the
-# options below collected by Home Assistant and read by nobody. The Dockerfile
-# beside this file is FROM that published image and adds only an entrypoint that
-# turns add-on options into CpapDash configuration, so the Supervisor's build is
-# a pull plus two small layers rather than a C++ compile.
+# Pull the add-on image instead of building it here (SDD-035). `{arch}` is the
+# Supervisor's substitution, filled from the `arch:` list below, so an amd64 box
+# pulls amd64-cpapdash and a Pi pulls aarch64-cpapdash. The tag is always this
+# file's `version:`, which is why nothing here says `latest`: an add-on that
+# reports a version must be that version on every box that installs it, and a
+# rollback is pointing `version:` at an older tag.
+#
+# These are NOT ghcr.io/hms-homelab/hms-cpap. They are the Dockerfile beside this
+# file, built and published per architecture by the hms-cpap release workflow, so
+# they already carry `CMD ["/run.sh"]` and the jq layer. That is what makes the
+# key safe to set: the earlier objection here was that a pulled image would run
+# its own ENTRYPOINT and leave the options below read by nobody, and these images
+# run the entrypoint that reads them.
+#
+# The add-on repo's track-cpapdash workflow will not move `version:` to a release
+# whose two images are not both on the registry, so this key cannot point at a
+# tag that does not exist yet.
+image: ghcr.io/hms-homelab/{arch}-cpapdash
 
 # amd64 and aarch64 only, matching the platforms the image is actually built for
 # (linux/amd64 and linux/arm64). That covers 64-bit Pi 3/4/5, x86 boxes, VMs,
