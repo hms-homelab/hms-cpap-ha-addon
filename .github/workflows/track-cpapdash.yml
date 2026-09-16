@@ -62,14 +62,37 @@ jobs:
           # failed would otherwise break every add-on build, and the Supervisor
           # builds locally on each user's box, so the failure would land on them
           # rather than in CI where someone would see it.
-          TOKEN=$(curl -fsS "https://ghcr.io/token?scope=repository:hms-homelab/hms-cpap:pull&service=ghcr.io" | jq -r .token)
-          CODE=$(curl -s -o /dev/null -w '%{http_code}' \
-                   -H "Authorization: Bearer $TOKEN" \
-                   -H "Accept: application/vnd.oci.image.index.v1+json" \
-                   "https://ghcr.io/v2/hms-homelab/hms-cpap/manifests/${LATEST}")
+          manifest_code() {   # repository, reference
+            local tok
+            tok=$(curl -fsS "https://ghcr.io/token?scope=repository:$1:pull&service=ghcr.io" | jq -r .token)
+            curl -s -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer $tok" \
+              -H "Accept: application/vnd.oci.image.index.v1+json" \
+              -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+              -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+              "https://ghcr.io/v2/$1/manifests/$2"
+          }
+
+          CODE=$(manifest_code "hms-homelab/hms-cpap" "${LATEST}")
           if [ "$CODE" != "200" ]; then
             echo "::warning::Release $LATEST has no published image (manifest HTTP $CODE). Not bumping."
             exit 0
+          fi
+
+          # SDD-035: once config.yaml carries `image:`, the Supervisor PULLS the
+          # add-on image instead of building one, so a version naming a tag
+          # whose per-architecture images are missing is an add-on nobody can
+          # install or update. Checked for every architecture the add-on
+          # declares, and only while `image:` is actually in use.
+          if grep -q '^image:' "$CFG"; then
+            for ARCH in $(sed -n '/^arch:/,/^[^ -]/p' "$CFG" | grep -oE '^ *- *[a-z0-9]+' | awk '{print $2}'); do
+              ACODE=$(manifest_code "hms-homelab/${ARCH}-cpapdash" "${LATEST}")
+              if [ "$ACODE" != "200" ]; then
+                echo "::warning::Release $LATEST has no ${ARCH}-cpapdash image (manifest HTTP $ACODE). Not bumping."
+                exit 0
+              fi
+              echo "${ARCH}-cpapdash:${LATEST} is there."
+            done
           fi
 
           sed -i -E "s|(FROM ghcr\.io/hms-homelab/hms-cpap:).*|\1${LATEST}|" "$DOCKERFILE"
