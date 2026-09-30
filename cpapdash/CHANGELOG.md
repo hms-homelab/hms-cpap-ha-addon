@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 5.4.8
 
+- **A night's events sit on the stretch they happened in, and a night has one
+  AHI** everywhere it is shown (CpapDash 5.4.8). Past nights keep their old
+  per-session events until they are parsed again.
 - **The `fysetc` source is removed**, with CpapDash's own removal of it. Port
   9000, its inbound listener, is no longer published, and the add-on no longer
   writes a `fysetc` block into the configuration. `source` accepts `ezshare`
