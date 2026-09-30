@@ -4,11 +4,9 @@
 
 - **The `fysetc` source is removed**, with CpapDash's own removal of it. Port
   9000, its inbound listener, is no longer published, and the add-on no longer
-  writes a `fysetc` block into the configuration. An install that saved
-  `source: fysetc` keeps starting: the option is still accepted so the
-  Supervisor's check passes, and the add-on runs it as `ezshare` and says so in
-  its log. Choose `ezshare` or `local` in the Configuration tab to make that
-  explicit.
+  writes a `fysetc` block into the configuration. `source` accepts `ezshare`
+  and `local` only: an install that saved `fysetc` must choose one of them in
+  the Configuration tab before it starts again.
 
 ## 5.1.6
 

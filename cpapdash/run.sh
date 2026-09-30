@@ -26,14 +26,6 @@ opt() {
 }
 
 SOURCE=$(opt '.source' 'ezshare')
-# The Fysetc source was removed from CpapDash. The schema still accepts the
-# value, so an install that saved it keeps validating and starting; it runs as
-# ez Share, the default, and says so, until another source is chosen.
-if [ "$SOURCE" = "fysetc" ]; then
-    echo "[cpapdash] source 'fysetc' has been removed from CpapDash; using ezshare." \
-         "Choose a source in the Configuration tab." >&2
-    SOURCE=ezshare
-fi
 EZSHARE_URL=$(opt '.ezshare_url' '')
 LOCAL_DIR=$(opt '.local_dir' '')
 BURST=$(opt '.burst_interval' '300')

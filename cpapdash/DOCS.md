@@ -16,10 +16,6 @@ A way for the add-on to reach the card. CpapDash supports two:
 Both are network paths, so the add-on needs no USB device mapping and no
 privileged mode.
 
-The Fysetc source has been removed from CpapDash. An install that still has
-`fysetc` selected keeps starting, runs as `ezshare` and says so in its log;
-choose `ezshare` or `local` to make that explicit.
-
 ## Installation
 
 1. Settings → Apps → ⋮ → Repositories, and add
@@ -45,8 +41,7 @@ out a value that is already there either; it simply is not applied.
 
 ## Options
 
-**`source`** (`ezshare`, `local`) Where the nights come from. (`fysetc` is still
-accepted so an older setting does not stop the add-on, and runs as `ezshare`.)
+**`source`** (`ezshare`, `local`) Where the nights come from.
 
 **`ezshare_url`** The card's address, e.g. `http://192.168.4.1`. Only used when
 `source` is `ezshare`.

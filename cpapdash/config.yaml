@@ -54,8 +54,7 @@ watchdog: "http://[HOST]:[PORT:8893]/health"
 # the add-on's Network panel.
 #
 # Every source CpapDash supports is outbound: it goes to the card and pulls, so
-# nothing else needs publishing. (Port 9000 was the Fysetc source's inbound
-# listener; that source was removed from CpapDash.)
+# nothing else needs publishing.
 ports:
   8893/tcp: null
 ports_description:
@@ -101,11 +100,7 @@ options:
   log_level: info
 
 schema:
-  # `fysetc` stays in this list only so an install that saved it still passes
-  # the Supervisor's option check and starts: the Fysetc source was removed from
-  # CpapDash, and run.sh runs such an install as ezshare and says so in the log.
-  # Drop it here once no install can still be carrying it.
-  source: list(ezshare|local|fysetc)
+  source: list(ezshare|local)
   ezshare_url: str?
   local_dir: str?
   burst_interval: int(30,86400)
