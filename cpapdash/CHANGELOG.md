@@ -2,33 +2,13 @@
 
 ## Unreleased
 
-- **The `fysetc` source now actually works.** It has been selectable since the
-  add-on shipped and could never have collected a night, for two independent
-  reasons, neither of which produced an error.
-
-  `run.sh` set `source` and never wrote the `fysetc` block, and
-  `AppConfig::fysetc.enabled` defaults to false, so the TCP server never
-  started. The add-on reported the source it had been handed and simply never
-  listened. It is now derived from `source` rather than exposed as its own
-  toggle, because two controls that must agree are one control and a bug, and it
-  is written on every start including when false, so switching the source away
-  from fysetc stops the server instead of leaving it listening.
-
-  Separately, port 9000 was not published. Every other source CpapDash supports
-  is outbound; the Fysetc board dials IN, so CpapDash is the server and the
-  container has to publish a port or nothing on the network can reach it. The
-  config comment asserted the opposite ("the ezShare and Fysetc sources are
-  network protocols and need no mapping at all"), which was true of ezShare and
-  wrong of Fysetc, while DOCS.md one file over described the inbound direction
-  correctly. Ingress is no help either: it proxies the web UI on 8893 and knows
-  nothing about a raw TCP listener.
-
-  **9000 is now published on host port 9000 by default**, so the add-on listens
-  for the board with no Network-panel step. That reaches existing installs too:
-  since Supervisor 2026.07 a saved Network panel is merged over the add-on's
-  defaults instead of replacing them. On an older Supervisor that had the panel
-  saved, map 9000 by hand; the symptom of not doing it is the board retrying
-  forever against a closed port while the add-on log looks healthy.
+- **The `fysetc` source is removed**, with CpapDash's own removal of it. Port
+  9000, its inbound listener, is no longer published, and the add-on no longer
+  writes a `fysetc` block into the configuration. An install that saved
+  `source: fysetc` keeps starting: the option is still accepted so the
+  Supervisor's check passes, and the add-on runs it as `ezshare` and says so in
+  its log. Choose `ezshare` or `local` in the Configuration tab to make that
+  explicit.
 
 ## 5.1.6
 

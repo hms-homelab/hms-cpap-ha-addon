@@ -53,30 +53,13 @@ watchdog: "http://[HOST]:[PORT:8893]/health"
 # safer default, but a user who wants the API from another machine can map it in
 # the add-on's Network panel.
 #
-# 9000 is published by DEFAULT, and that is the one asymmetry on this page worth
-# reading twice. Every other source CpapDash supports is outbound: it goes to the
-# card and pulls. The Fysetc board is the other way round, it dials in, so
-# CpapDash is the SERVER and the container has to publish a port or nothing on
-# the network can reach it. Ingress is no help here: it proxies HTTP into 8893
-# and knows nothing about a raw TCP listener. A default of null would put the
-# only working path behind a Network-panel step that nothing errors on when
-# skipped, so the default is the mapping itself. The listener only exists when
-# source is fysetc (run.sh derives fysetc.enabled from source), so for every
-# other source the published port has nothing behind it.
-#
-# Since Supervisor 2026.07 a saved Network panel is merged OVER these defaults
-# rather than replacing them, so a port added here reaches existing installs on
-# the next update, whether or not the user has ever saved that panel. Older
-# Supervisors keep the saved mapping whole, and there 9000 has to be added by hand.
+# Every source CpapDash supports is outbound: it goes to the card and pulls, so
+# nothing else needs publishing. (Port 9000 was the Fysetc source's inbound
+# listener; that source was removed from CpapDash.)
 ports:
   8893/tcp: null
-  9000/tcp: 9000
 ports_description:
   8893/tcp: Direct web UI and API access, bypassing Ingress. Leave empty to use Ingress only.
-  9000/tcp: >-
-    Where a Fysetc SD WiFi Pro connects in, published on 9000 by default. Point
-    the board's destination at this machine on that port. Ignored for every
-    other source.
 
 # want, not need: CpapDash is fully usable through its own web UI with no
 # broker at all, so refusing to start without one would be wrong. When a broker
@@ -86,10 +69,6 @@ services:
 
 # share, for users whose card contents arrive on a network share Home Assistant
 # already mounts. ezShare is a network protocol and needs no mapping at all.
-#
-# This used to say the same of Fysetc, and that was wrong in a way that made the
-# source silently non-functional: ezShare is polled OUTBOUND, while the Fysetc
-# board connects IN, so it needs a published port. See `ports` above.
 #
 # No addon_config mapping: the generated configuration and the SQLite database
 # live in the add-on's own /data, so there is nothing here for a person to edit
@@ -122,6 +101,10 @@ options:
   log_level: info
 
 schema:
+  # `fysetc` stays in this list only so an install that saved it still passes
+  # the Supervisor's option check and starts: the Fysetc source was removed from
+  # CpapDash, and run.sh runs such an install as ezshare and says so in the log.
+  # Drop it here once no install can still be carrying it.
   source: list(ezshare|local|fysetc)
   ezshare_url: str?
   local_dir: str?

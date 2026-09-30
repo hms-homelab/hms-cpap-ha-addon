@@ -6,28 +6,19 @@ sensors. No cloud account anywhere in the path.
 
 ## What you need
 
-A way for the add-on to reach the card. CpapDash supports three:
+A way for the add-on to reach the card. CpapDash supports two:
 
 | Source | What it is |
 |---|---|
 | `ezshare` | An ez Share WiFi SD card, or the CpapDash Push kit, serving the card over HTTP |
-| `fysetc` | A Fysetc SD WiFi Pro, which connects in to CpapDash rather than being polled |
 | `local` | A directory Home Assistant can already see, e.g. a mounted network share |
 
-All three are network paths, so the add-on needs no USB device mapping and no
+Both are network paths, so the add-on needs no USB device mapping and no
 privileged mode.
 
-`fysetc` is the one source where the connection comes the other way. The board
-dials in, so CpapDash is the server, and the add-on publishes port **9000** on
-this machine by default. Point the board's destination at this machine's IP on
-that port. Ingress does not cover it: Ingress proxies the web UI, and this is a
-raw TCP listener.
-
-Check the add-on's **Network** panel once after updating: **9000** should show as
-mapped to host port **9000**. It will be, unless you are on a Supervisor older
-than 2026.07 and had saved that panel before, in which case map it by hand. Leave
-it unmapped and the board retries forever against a closed port while the add-on
-log looks perfectly healthy, because from the inside nothing is wrong.
+The Fysetc source has been removed from CpapDash. An install that still has
+`fysetc` selected keeps starting, runs as `ezshare` and says so in its log;
+choose `ezshare` or `local` to make that explicit.
 
 ## Installation
 
@@ -54,7 +45,8 @@ out a value that is already there either; it simply is not applied.
 
 ## Options
 
-**`source`** (`ezshare`, `local`, `fysetc`) Where the nights come from.
+**`source`** (`ezshare`, `local`) Where the nights come from. (`fysetc` is still
+accepted so an older setting does not stop the add-on, and runs as `ezshare`.)
 
 **`ezshare_url`** The card's address, e.g. `http://192.168.4.1`. Only used when
 `source` is `ezshare`.
