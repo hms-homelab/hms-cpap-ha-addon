@@ -95,6 +95,52 @@ jobs:
             done
           fi
 
+          # The add-on's CHANGELOG carries every CpapDash release it moves past,
+          # taken from hms-cpap's own CHANGELOG at the new tag, so a user reading
+          # the update in Home Assistant sees what changed. Every version after
+          # the one the add-on was on, up to and including LATEST, newest first;
+          # a version that already has a heading here (written by hand) is left
+          # alone. A changelog that cannot be read or parsed is a warning, never
+          # a reason to hold the bump.
+          CL=cpapdash/CHANGELOG.md
+          if curl -fsSL "https://raw.githubusercontent.com/hms-homelab/hms-cpap/v${LATEST}/CHANGELOG.md" \
+                  -o /tmp/upstream-changelog.md; then
+            python3 - "$CURRENT" "$LATEST" /tmp/upstream-changelog.md "$CL" <<'PY' \
+              || echo "::warning::Could not carry the CpapDash changelog into $CL."
+          import re, sys
+          current, latest, upstream_path, addon_path = sys.argv[1:5]
+          ver = lambda s: tuple(int(x) for x in s.split("."))
+          upstream = open(upstream_path, encoding="utf-8").read()
+          addon = open(addon_path, encoding="utf-8").read()
+
+          # Upstream headings look like "## [5.4.9] - 2026-10-01".
+          heads = list(re.finditer(r"^## \[(\d+\.\d+\.\d+)\][^\n]*\n", upstream, re.M))
+          sections = {}
+          for i, m in enumerate(heads):
+              end = heads[i + 1].start() if i + 1 < len(heads) else len(upstream)
+              sections[m.group(1)] = upstream[m.end():end].strip()
+
+          have = set(re.findall(r"^## (\d+\.\d+\.\d+)\s*$", addon, re.M))
+          wanted = sorted((v for v in sections
+                           if ver(current) < ver(v) <= ver(latest) and v not in have),
+                          key=ver, reverse=True)
+          if not wanted:
+              print("Changelog: nothing to add.")
+              sys.exit(0)
+
+          block = "".join(f"## {v}\n\n{sections[v]}\n\n" for v in wanted)
+          title = "# Changelog\n\n"
+          if addon.startswith(title):
+              addon = title + block + addon[len(title):]
+          else:
+              addon = title + block + addon
+          open(addon_path, "w", encoding="utf-8").write(addon)
+          print("Changelog: added " + ", ".join(wanted))
+          PY
+          else
+            echo "::warning::Could not fetch the CpapDash ${LATEST} changelog; $CL left as it is."
+          fi
+
           sed -i -E "s|(FROM ghcr\.io/hms-homelab/hms-cpap:).*|\1${LATEST}|" "$DOCKERFILE"
           sed -i -E "s|^(version: *\").*(\")|\1${LATEST}\2|" "$CFG"
 
@@ -104,7 +150,7 @@ jobs:
 
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$DOCKERFILE" "$CFG"
+          git add "$DOCKERFILE" "$CFG" "$CL"
 
           # Belt and braces under `set -e`: git commit exits 1 on an empty index,
           # which would fail the job for the entirely normal case of there being
@@ -117,5 +163,5 @@ jobs:
 
           git commit \
             -m "Track CpapDash ${LATEST}" \
-            -m "Both values move together: the Dockerfile tag decides which image is built, and the config.yaml version is what makes the Supervisor offer the update. The image was confirmed present on ghcr before pointing at it."
+            -m "Both values move together: the Dockerfile tag decides which image is built, and the config.yaml version is what makes the Supervisor offer the update. The image was confirmed present on ghcr before pointing at it. The CHANGELOG carries CpapDash's own entries for every release in between."
           git push
