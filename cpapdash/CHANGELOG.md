@@ -1,5 +1,49 @@
 # Changelog
 
+## 5.4.11
+
+BMC / React Health Luna cards (beta).
+
+### Added
+- **A BMC / React Health Luna card**, from a local folder (format "BMC / React
+  Health Luna (beta)" in Setup and Settings) or by uploading a zip of the card.
+  Every session on the card not yet stored is imported; the newest is read
+  again while the machine is still writing it. Sessions, the machine's own
+  obstructive and clear-airway apneas, the AHI, leak, respiratory rate and I:E
+  per minute. On a bi-level Luna, IPAP, EPAP and pressure support are
+  published as on an AirCurve, and `avg_pressure` is not. Not over an ez Share.
+  Beta: it is built on one card, and flow, tidal volume and several of the
+  machine's record types are not read yet.
+- The cpapdash-parser pin moves to v8.5.3, which brings the BMC parser and only
+  that.
+
+## 5.4.10
+
+A re-parse now reaches Home Assistant (#33).
+
+### Fixed
+- **A re-parse changed the database and Home Assistant never heard of it.**
+  A backfill (`POST /api/backfill`, the re-parse in Settings, or an uploaded
+  card) re-read the nights and stored the new numbers, but published nothing,
+  so every sensor kept its old value until the next new night. When a
+  re-parse saves sessions, the newest night and the STR's daily sensors are
+  now published again within one burst cycle. It does not regenerate the AI
+  summary.
+- **An AirCurve upgraded from before 5.2.8 showed IPAP, EPAP and pressure
+  support as unknown.** The sensors were announced, but the nights stored
+  before 5.2.8 hold no IPAP channel, and nothing re-reads a stored night on
+  upgrade. **If your bi-level machine has been on hms-cpap since before
+  5.2.8, run a re-parse once** (Settings, or `POST /api/backfill`): the three
+  sensors fill as soon as it finishes.
+
+### Changed
+- **No `avg_pressure` on a bi-level.** On an AirCurve that sensor is the mean
+  of a pressure waveform swinging between EPAP and IPAP (6.4 cmH2O on a
+  5.3/9.3 night), a pressure the patient never receives. Use `hist_ipap` and
+  `hist_epap` instead. The entity is removed when the machine is seen to be a
+  bi-level and comes back if the machine changes. Every other machine still
+  publishes it.
+
 ## 5.4.9
 
 A failed download no longer damages the archive (since 5.4.4).
