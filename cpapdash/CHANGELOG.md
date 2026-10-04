@@ -1,5 +1,66 @@
 # Changelog
 
+## 5.4.15
+
+The Raspberry Pi zip is built the way 32-bit Raspberry Pi OS is.
+
+### Fixed
+- **On a Raspberry Pi, hms-cpap could crash parsing a night, and aborted on
+  every stop.** 32-bit Raspberry Pi OS is built for ARMv6, and its C++ library
+  counts shared pointers with a lock; the zip was built with Debian's ARMv7
+  headers, which count them atomically. Where a shared pointer crossed between
+  hms-cpap and the system's libraries it was counted two ways, and memory was
+  freed twice: "corrupted double-linked list" in the log while a night was
+  being read, and an abort (exit 6/ABRT) each time the service stopped. Every
+  Pi zip since the first had it.
+
+### Changed
+- The Pi zip is now cross-compiled against Raspberry Pi OS's own libraries and
+  C++ headers, and the release refuses to ship one built against any other
+  headers. Before it ships, the binary runs its preflight and reads a night
+  under emulation with memory checking on. The zip's contents and install
+  steps are unchanged; an install through Settings > Update or `install.sh`
+  replaces the binary as before.
+- `cmake/arm-toolchain.cmake` (cross-builds for a Pi) uses the sysroot's C++
+  headers too, and takes the sysroot from `RASPBIAN_SYSROOT`.
+
+## 5.4.14
+
+The shared library moves to hms-shared v1.6.18.
+
+### Fixed
+- **The MQTT client could hang for good on a subscribe.** It held its own lock
+  across a subscribe while the incoming-message thread held the client
+  library's lock to deliver into that same lock, so a subscribe made while
+  retained messages were still arriving froze both: no more publishes, no more
+  commands, until a restart. Home Assistant's retained `online` status is
+  exactly such a message. Fixed in hms-shared v1.6.18.
+
+### Changed
+- The hms-shared pin moves from v1.6.10 to v1.6.18. Also in that range: the
+  database pool reconnects missing connections on its own, and the Ollama
+  agent sends tool-call arguments in the form Ollama expects on every round.
+
+## 5.4.13
+
+Every install its own device id (#33).
+
+### Changed
+- **A new install generates its own device id**, `cpapdash_` and eight hex
+  characters, instead of a fixed default. Two installs on one broker kept the
+  same default and published under the same topics, fighting over one Home
+  Assistant device.
+- **An install on an old fixed default is moved to a generated id, once.** If
+  your id is `cpap_resmed_23243570851` (the default until 5.4.11) or `cpapdash`
+  (5.4.12), the first start of this version moves every night to a new
+  `cpapdash_...` id in one transaction and removes the old Home Assistant
+  device. **Home Assistant then shows a new device with new entities:
+  dashboards, automations and history graphs built on the old ones must be
+  pointed at the new ones, and their history does not carry over.** To keep
+  your id, add `"device_id_pinned": true` to `config.json` before upgrading.
+  The Home Assistant add-on pins any id typed into its `device_id` option, and
+  leaves `cpapdash_addon` as it is.
+
 ## 5.4.12
 
 Home Assistant shows the machine you own (#33).
