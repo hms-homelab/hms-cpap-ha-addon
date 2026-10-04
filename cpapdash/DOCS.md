@@ -90,7 +90,8 @@ setup wizard.
 **`device_id`** Every night is stored against this, and every read filters on it.
 Copy it from your existing `config.json`. Get this wrong and the dashboard is
 empty even though the database is full, because it is looking for a device that
-has no nights.
+has no nights. An id typed here is pinned: CpapDash never moves it to a
+generated one, even if it is one of its old fixed defaults.
 
 **`database`** and its `db_*` fields. Point them at the same server you use now.
 Nothing needs migrating: the add-on reads and writes the same tables.
