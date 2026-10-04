@@ -125,9 +125,15 @@ fi
 # working, so answering the wizard's questions again buys nothing, and the wizard
 # offering to generate a new id is the exact mistake that would hide their data.
 SETUP_COMPLETE=false
+# The same reasoning pins the id. CpapDash gives an install still on one of
+# its old fixed default ids a generated one of its own, moving its nights to
+# it; an id typed into the options was chosen, so it must never be moved. This
+# start would also put the typed id straight back over the new one.
+DEVICE_ID_PINNED=false
 if [ -n "$DEVICE_ID_FROM_OPTIONS" ]; then
     echo "[cpapdash] device_id given in the options, treating this as a migration"
     SETUP_COMPLETE=true
+    DEVICE_ID_PINNED=true
 fi
 MYAIR_DEVICE_TOKEN=""
 MYAIR_REFRESH_TOKEN=""
@@ -198,6 +204,7 @@ jq -n \
     --arg mqtt_user "$MQTT_USER" \
     --arg mqtt_password "$MQTT_PASSWORD" \
     --argjson setup_complete "$SETUP_COMPLETE" \
+    --argjson device_id_pinned "$DEVICE_ID_PINNED" \
     --argjson myair_enabled "$MYAIR_ENABLED" \
     --arg myair_region "$MYAIR_REGION" \
     --arg myair_username "$MYAIR_USERNAME" \
@@ -244,6 +251,10 @@ jq -n \
     | with_entries(select(.value != "" and .value != null))
     | (.database |= with_entries(select(.value != "" and .value != null)))
     | (.myair   |= with_entries(select(.value != "" and .value != null)))
+
+    # Set when the id came from the options, and never cleared from here: a
+    # false would overwrite a pin someone put in config.json by hand.
+    | . + (if $device_id_pinned then {device_id_pinned: true} else {} end)
 
     # MQTT only when the Supervisor actually offered a broker. Otherwise leave
     # whatever is configured alone: an install migrating in may point at a
