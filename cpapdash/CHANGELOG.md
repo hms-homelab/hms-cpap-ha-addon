@@ -1,5 +1,24 @@
 # Changelog
 
+## 5.5.3
+
+An AirSense 11 whose card cannot be read is read over its own Bluetooth.
+
+### Added
+- **AirSense 11 over Bluetooth, through the bridge** (`airsense11` in
+  `config.json`, off by default). Some AirSense 11 machines cannot power a
+  WiFi SD card in their slot, so there is nothing to collect from the card.
+  The bridge pairs with the machine over the machine's own Bluetooth (once,
+  with the code on its screen, on the bridge's page) and answers the
+  machine's daily summary at `GET /airsense11/summary?from=YYYY-MM-DD`: one
+  record per therapy day, the figures the machine writes to `STR.edf`.
+  hms-cpap pulls it every `pull_hours` (default 6) and stores the days with
+  usage exactly as STR days (`saveSTRDailyRecords`, minus removed nights), so
+  the dashboard, the trends and the reports show them. The first pull asks
+  for everything the machine keeps; each later one from two days before the
+  newest day it has. No waveforms and no event list come this way. Needs
+  cpapdash-parser 8.7.0 (`AirSense11SummaryParser`).
+
 ## 5.5.2
 
 Direct Bluetooth mode tells the two rings apart again.
