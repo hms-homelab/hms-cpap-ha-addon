@@ -1,5 +1,46 @@
 # Changelog
 
+## 5.5.2
+
+Direct Bluetooth mode tells the two rings apart again.
+
+### Fixed
+- **Direct Bluetooth mode took an original O2Ring for an O2Ring-S** (since
+  5.5.1). The O2Ring-S was also recognised by its manufacturer ID, which the
+  original O2Ring advertises too, so an original ring went down the O2Ring-S
+  path and was never read. The O2Ring-S is now recognised by its name or its
+  service only.
+
+## 5.5.1
+
+Direct Bluetooth mode finds the O2Ring-S (experimental).
+
+### Added
+- **Direct Bluetooth mode talks to the O2Ring-S, EXPERIMENTAL.** With
+  `WITH_BLE`, hms-cpap reaches the ring itself over BlueZ instead of through a
+  bridge. Until now it only knew the original O2Ring family's protocol and
+  never found an O2Ring-S. It now recognises the O2Ring-S by its `S8-AW` /
+  `T8520_` name, its manufacturer ID or its service, and speaks its own
+  protocol: live SpO2 and heart rate, the file list (as `<YYYYMMDDhhmmss>.o2s`)
+  and downloads, resuming a download after a reconnect when the ring caps one
+  connection's transfer. The ring's clock is left as its app set it. Not yet
+  confirmed against a real O2Ring-S; the label comes off once it has been.
+
+## 5.5.0
+
+The O2Ring-S's recordings are read (experimental).
+
+### Added
+- **O2Ring-S (model T8520) recordings, EXPERIMENTAL.** Built from the ring's
+  published protocol and synthetic recordings, not yet confirmed against a
+  real O2Ring-S night; the label comes off once one has been. The O2Ring-S
+  does not write `.vld` files: its recordings are one sample a second with the
+  start time in the file name. hms-cpap now reads them wherever it reads a ring file: pulled
+  from a bridge's `/o2ring/files`, found in a folder beside the card (named
+  `.o2s`, or the ring's own bare `YYYYMMDDhhmmss` name, recognised by its
+  header), and uploaded by hand. A recording the ring is still writing is
+  left until it is finished, then read. Needs cpapdash-parser 8.6.0.
+
 ## 5.4.15
 
 The Raspberry Pi zip is built the way 32-bit Raspberry Pi OS is.
