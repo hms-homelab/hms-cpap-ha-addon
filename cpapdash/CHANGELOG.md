@@ -1,5 +1,21 @@
 # Changelog
 
+## 5.5.4
+
+STR.edf reaches the archive a minute after mask-off, not an hour.
+
+### Fixed
+- **The STR is read on the burst a session closes.** On an ez Share (or any
+  card read over a transport), STR.edf was fetched only once the night had
+  been quiet for an hour, so the archive's `STR.edf`, the dashboard's STR
+  figures and the STR state on MQTT trailed mask-off by an hour. The machine
+  writes STR.edf at mask-off, so the burst that sees a session close now reads
+  it, once however many sessions closed. An OSCAR import from the archive no
+  longer has to wait the hour for the night's settings. The hour of quiet
+  still decides when the night is announced (outcome, SleepHQ export, range
+  summaries) and reads the STR again first. A local folder is unchanged: it
+  already reads its STR every burst.
+
 ## 5.5.3
 
 An AirSense 11 whose card cannot be read is read over its own Bluetooth.
