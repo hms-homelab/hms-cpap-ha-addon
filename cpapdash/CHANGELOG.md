@@ -1,5 +1,92 @@
 # Changelog
 
+## 5.6.1
+
+The desktop app is now called HmsCpap Installer, so it is not confused with
+other CpapDash software.
+
+### Changed
+- **New names.** Windows: `HmsCpapInstaller-Setup.exe` installs
+  `HmsCpapInstaller.exe`, with a Start menu folder "HmsCpap Installer".
+  macOS: `HmsCpap.dmg` holds `HmsCpap.app`. The tray, settings window and
+  setup screens say HmsCpap.
+- **Upgrading keeps working.** An install of 5.6.0 or earlier updates itself
+  to 5.6.1 without any step from you:
+  - on Windows the upgrade leaves a copy under the old name for the old
+    updater to start, and the new tray deletes it on its first run; start at
+    login is moved to the new program, and the old Start menu folder and
+    desktop shortcut are removed;
+  - on macOS the disk image also carries the old app name for the old
+    updater, and the app keeps the folder it was installed in, so a Login
+    Items entry stays valid.
+
+### Fixed
+- Uninstalling on Windows now also removes a start-at-login entry that was
+  turned on from the tray rather than in the installer.
+
+## 5.6.0
+
+A card is listed for a reason, not on every burst, and it survives an ez Share
+that drops out.
+
+### Changed
+- **Listings on a reason.** Every burst used to list the DATALOG index twice,
+  every date folder from the second-newest stored night on, and after a burst
+  that downloaded, the card root and every directory as well: about 275
+  listings an hour on an idle card and 550 to 700 during a night. Now:
+  - the DATALOG index once per start (until one succeeds), once a day at the
+    machine's noon, and on a reason (a card back after failures, a folder
+    gone, Sync now);
+  - tonight's folder by name every burst; a growing folder every burst;
+    after growth stops, checkpoints at 5, 35 and 65 minutes; an 8 hour
+    ceiling for recent folders; settled folders are left alone;
+  - the machine's clock (drift and zone) is learned from fresh listings and
+    stored, with the host's zone until it is known;
+  - SETTINGS at start, at the therapy start, at the checkpoints, on a reason,
+    every 15 minutes during a night and hourly when idle; the whole card's
+    residue with the daily index;
+  - a local folder follows the same plan: STR.edf and the ring's .vld scan
+    move off every burst.
+- **Folder listings are stored** (`cpap_folder_listing`), with a done mark
+  per file and per folder. A folder that is complete is never listed again
+  and a done file never fetched again, so a restart over a card with 300
+  nights lists a handful of folders instead of 300, and a walk back that
+  drops part way resumes where it stopped.
+- **SETTINGS works like a night folder.** A file there (or in the card root,
+  or any directory but DATALOG) is fetched when its size or its card stamp
+  changed. Size alone never saw DLL.log, Journal.dat or a .crc change: each
+  is rewritten in place at the same size, so the archive kept its first copy.
+- **A .crc waits for the next burst** when the file it belongs to was
+  fetched on this one: from the same listing, without listing again. A
+  night's .crc is taken on a burst where its EDF stood still.
+- **The night's working copies survive a restart.** They are written to
+  `CPAP_TEMP_DIR`, else `<data dir>/work`, instead of the system temp
+  directory, which a service manager may hand out empty on every start; a
+  night complete in the archive gives its working folder back.
+
+### Added
+- **The card's health in Home Assistant:** Card reachable, Card last
+  answered and Card health (OK / Not answering / for 1 h / for 12 h),
+  published on a change and every 15 minutes, retained.
+
+### Fixed
+- **An ez Share that drops out.** A listing answered with an HTTP error is
+  retried three times, then counted against that folder only, instead of
+  reading as an empty folder or stopping the burst; a folder that had files
+  never lists empty; three failures in a row park a folder or a file for an
+  hour; whole-file downloads stall out at 1 KB/s for 30 s like ranged ones.
+- **A whole file cut short is not kept.** It lands beside the copy held and
+  replaces it only when it holds what the listing shows, and the archive
+  never takes a shorter copy of a night's EDF. A transfer cut short used to
+  replace the copy held and then the archive's.
+- **Card paths with spaces.** A directory like `System Volume Information `
+  (spaces, one trailing) failed as a malformed URL on every walk; card paths
+  are now percent-encoded.
+- **SETTINGS is listed once after a fault**, not twice.
+- An old night the walk back imports is not listed again; names that are
+  not valid text (a damaged card's 0xFF entries) are dropped from every
+  listing; an idle burst is no longer reported as an error.
+
 ## 5.5.4
 
 STR.edf reaches the archive a minute after mask-off, not an hour.
