@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.6.2
+
+### Fixed
+- **A night copied into a local folder is imported again without a
+  restart** (#39, thanks @rccoleman for the diagnosis and the fix in #40).
+  Since 5.6.0 a local card root read its list of night folders only at
+  start and once a day at the machine's noon, the same plan that spares an
+  ez Share card its slow listings. A night copied in by hand after tonight's
+  folder rolled over was not looked at until the next noon or a restart. A
+  local folder now notices on the next burst when its night folders change,
+  which is a plain directory read. ez Share cards are unchanged.
+
 ## 5.6.1
 
 The desktop app is now called HmsCpap Installer, so it is not confused with
