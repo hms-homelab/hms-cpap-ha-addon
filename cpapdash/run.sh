@@ -19,6 +19,13 @@ OPTIONS=/data/options.json
 CONFIG_DIR=/data
 CONFIG="$CONFIG_DIR/config.json"
 
+# Everything else the service keeps goes under its data directory too: the
+# Sleep Bridge stream's banked batches and rebuilt card, supply events,
+# uploads. The image points that at /config, which here is an anonymous
+# volume the Supervisor drops whenever it recreates the container, so a
+# restart would throw away batches a bridge has already been told are safe.
+export HMS_CPAP_DATA_DIR="$CONFIG_DIR"
+
 opt() {
     # $1 = jq path, $2 = fallback when absent, null or empty
     value=$(jq -r "$1 // empty" "$OPTIONS" 2>/dev/null || true)
