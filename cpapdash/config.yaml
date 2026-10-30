@@ -53,12 +53,18 @@ watchdog: "http://[HOST]:[PORT:8893]/health"
 # safer default, but a user who wants the API from another machine can map it in
 # the add-on's Network panel.
 #
-# Every source CpapDash supports is outbound: it goes to the card and pulls, so
-# nothing else needs publishing.
+# 8894 is published by default. It is the one inbound source: a Sleep Bridge on
+# the local network streams its card's sector writes to
+# ws://<Home Assistant>:8894/sleepbridge/v1/device. Only that stream answers on
+# it, never the web UI or the API, and it has no login, so keep it on the LAN.
+# Every other source is outbound (CpapDash goes to the card and pulls). Clear it
+# in the Network panel if no Sleep Bridge points here.
 ports:
   8893/tcp: null
+  8894/tcp: 8894
 ports_description:
   8893/tcp: Direct web UI and API access, bypassing Ingress. Leave empty to use Ingress only.
+  8894/tcp: Sleep Bridge stream. A Sleep Bridge set to "My hms-cpap" sends its card here. Only the stream is served on this port.
 
 # want, not need: CpapDash is fully usable through its own web UI with no
 # broker at all, so refusing to start without one would be wrong. When a broker

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Port 8894 is published for the Sleep Bridge stream.** A Sleep Bridge set
+  to "My hms-cpap" streams its card to the add-on on 8894. Only the stream is
+  served on that port, never the web UI or the API, and 8893 stays as it was.
+  Clear the port in the Network panel if no Sleep Bridge points here. Needs a
+  CpapDash release that carries the Sleep Bridge receiver.
+
 ## 5.7.1
 
 ### Fixed

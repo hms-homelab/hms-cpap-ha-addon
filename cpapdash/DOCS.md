@@ -162,6 +162,24 @@ The UI runs through Ingress, so there is no port to open and no second password.
 Direct access on port 8893 is available if you want the API from another machine:
 map it in the add-on's Network panel.
 
+## Sleep Bridge
+
+A Sleep Bridge can send its card straight to this add-on instead of to the
+cloud. On the bridge's setup page (hold its button 10 seconds to reopen it),
+choose **My hms-cpap** and type your Home Assistant's address, for example
+`192.168.1.20`. The bridge tests the address before it keeps it. Then power
+the CPAP machine off and on once, outside therapy, so the card's layout can be
+trusted.
+
+The stream arrives on port 8894, which the add-on publishes by default. Only
+the stream answers there, not the web UI or the API, and it has no login: keep
+it on your local network. If no Sleep Bridge points here, you can clear the
+port in the add-on's Network panel.
+
+The rebuilt card lands in `/data/sleepbridge/<bridge>/`, in the machine's own
+card layout (a ResMed AirSense or a BMC / React Health Luna). The protocol is
+documented in hms-cpap's `docs/SLEEP_BRIDGE_LOCAL_STREAM.md`.
+
 ## Data
 
 The generated configuration and the SQLite database live in the add-on's own
