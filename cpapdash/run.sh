@@ -27,6 +27,7 @@ opt() {
 
 SOURCE=$(opt '.source' 'ezshare')
 EZSHARE_URL=$(opt '.ezshare_url' '')
+FLASHAIR_URL=$(opt '.flashair_url' '')
 LOCAL_DIR=$(opt '.local_dir' '')
 BURST=$(opt '.burst_interval' '300')
 DEVICE_NAME=$(opt '.device_name' 'CPAP')
@@ -189,6 +190,7 @@ jq -n \
     --arg archive_dir "$ARCHIVE_DIR" \
     --arg source "$SOURCE" \
     --arg ezshare_url "$EZSHARE_URL" \
+    --arg flashair_url "$FLASHAIR_URL" \
     --arg local_dir "$LOCAL_DIR" \
     --argjson burst "${BURST:-300}" \
     --arg db_type "$DB_TYPE" \
@@ -217,6 +219,7 @@ jq -n \
         archive_dir: $archive_dir,
         source: $source,
         ezshare_url: $ezshare_url,
+        flashair_url: $flashair_url,
         local_dir: $local_dir,
         burst_interval: $burst,
         web_port: 8893,
@@ -251,6 +254,12 @@ jq -n \
     | with_entries(select(.value != "" and .value != null))
     | (.database |= with_entries(select(.value != "" and .value != null)))
     | (.myair   |= with_entries(select(.value != "" and .value != null)))
+
+    # A saved config carries transport, and the service reads it ahead of
+    # source. So FlashAir is written as a transport too, or choosing it here on
+    # an install that already ran would not take. A FlashAir card is ResMed.
+    | . + (if $source == "flashair"
+           then {transport: "flashair", format: "resmed"} else {} end)
 
     # Set when the id came from the options, and never cleared from here: a
     # false would overwrite a pin someone put in config.json by hand.

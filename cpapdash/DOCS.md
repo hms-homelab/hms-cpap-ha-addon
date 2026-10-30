@@ -6,11 +6,12 @@ sensors. No cloud account anywhere in the path.
 
 ## What you need
 
-A way for the add-on to reach the card. CpapDash supports two:
+A way for the add-on to reach the card. CpapDash supports three:
 
 | Source | What it is |
 |---|---|
 | `ezshare` | An ez Share WiFi SD card, or the CpapDash Push kit, serving the card over HTTP |
+| `flashair` | A Toshiba FlashAir WiFi SD card joined to your home WiFi |
 | `local` | A directory Home Assistant can already see, e.g. a mounted network share |
 
 Both are network paths, so the add-on needs no USB device mapping and no
@@ -41,10 +42,14 @@ out a value that is already there either; it simply is not applied.
 
 ## Options
 
-**`source`** (`ezshare`, `local`) Where the nights come from.
+**`source`** (`ezshare`, `flashair`, `local`) Where the nights come from.
 
 **`ezshare_url`** The card's address, e.g. `http://192.168.4.1`. Only used when
 `source` is `ezshare`.
+
+**`flashair_url`** The FlashAir's address. Left empty it is
+`http://flashair.local`, which a FlashAir on your home WiFi answers to. Only
+used when `source` is `flashair`. ResMed machines only.
 
 **`local_dir`** The card root, meaning the directory that holds both `STR.edf`
 and `DATALOG`. Only used when `source` is `local`. Because the add-on maps Home

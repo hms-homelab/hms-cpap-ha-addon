@@ -82,6 +82,7 @@ map:
 options:
   source: ezshare
   ezshare_url: http://192.168.4.1
+  flashair_url: ""
   local_dir: ""
   burst_interval: 300
   device_name: ResMed AirSense 10
@@ -100,8 +101,9 @@ options:
   log_level: info
 
 schema:
-  source: list(ezshare|local)
+  source: list(ezshare|flashair|local)
   ezshare_url: str?
+  flashair_url: str?
   local_dir: str?
   burst_interval: int(30,86400)
   device_name: str?
