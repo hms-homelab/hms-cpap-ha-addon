@@ -263,6 +263,13 @@ Three new ways for a night to reach hms-cpap, none of them a WiFi SD card.
 - The Pi package lists follow the Dockerfile.
 - The parser pin moves to 8.9.2.
 
+### Fixed
+- **What CpapDash keeps beside its config now survives a restart.** The
+  service's data directory pointed at the image's /config, which in the
+  add-on is a throwaway volume the Supervisor replaces whenever it recreates
+  the container. Supply events, uploads and the Sleep Bridge stream's banked
+  batches now live in the add-on's own /data with the configuration.
+
 ## 5.7.1
 
 ### Fixed
