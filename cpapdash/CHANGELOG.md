@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+- **Port 8894 is published for the Sleep Bridge stream.** A Sleep Bridge set
+  to "My hms-cpap" streams its card to the add-on on 8894. Only the stream is
+  served on that port, never the web UI or the API, and 8893 stays as it was.
+  Clear the port in the Network panel if no Sleep Bridge points here.
+
 ### Fixed
 - **Bluetooth works in the add-on** (#50, thanks @TLaren). The add-on now asks
   the Supervisor for the host's D-Bus (`host_dbus: true`), where Home
