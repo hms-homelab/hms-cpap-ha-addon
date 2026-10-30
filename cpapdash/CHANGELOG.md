@@ -1,5 +1,16 @@
 # Changelog
 
+## 5.6.3
+
+### Fixed
+- **A ring file copied into a local folder is imported on the next burst**
+  (#41, thanks @rccoleman). Since 5.6.0 the scan for an O2Ring's `.vld`
+  files in a local card root ran at the SETTINGS pace, every 15 minutes
+  during a night and every hour otherwise, so a file copied in by hand could
+  wait up to an hour or a restart. It now runs every burst: it is a
+  directory read, and it skips files already stored. ez Share cards are
+  unchanged.
+
 ## 5.6.2
 
 ### Fixed
