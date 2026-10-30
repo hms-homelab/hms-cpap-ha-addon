@@ -1,5 +1,28 @@
 # Changelog
 
+## 5.7.0
+
+### Changed
+- **A FlashAir night file is complete only at its exact size.** A FlashAir
+  lists every file to the byte, where an ez Share lists whole KB. Held to the
+  KB, a copy up to two KB short of a night's last write counted as complete
+  and was never finished. Now, for a FlashAir, a night file is resumed until
+  it is exactly the size the card lists, a copy longer than the card's file
+  is fetched again from the start, and a whole file that arrives short is not
+  kept. An ez Share and a local folder are unchanged.
+
+## 5.6.4
+
+### Added
+- **A Toshiba FlashAir WiFi SD card as a source.** The card sits in the
+  CPAP's SD slot and joins your home WiFi itself (`APPMODE=5` in its
+  `SD_WLAN/CONFIG`), so no bridge is needed. Pick "Toshiba FlashAir" in the
+  setup wizard, in Settings or in the desktop installer; it is found as
+  `http://flashair.local`, or give its address (`flashair_url`,
+  `FLASHAIR_BASE_URL`, `CPAP_SOURCE=flashair`). Nights are listed and read
+  as they are recorded, with ranged downloads. ResMed cards. Tested on a
+  FlashAir W-02 in an AirSense 10, reading a session while it recorded.
+
 ## 5.6.3
 
 ### Fixed
