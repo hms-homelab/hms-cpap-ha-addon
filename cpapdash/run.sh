@@ -256,10 +256,12 @@ jq -n \
     | (.myair   |= with_entries(select(.value != "" and .value != null)))
 
     # A saved config carries transport, and the service reads it ahead of
-    # source. So FlashAir is written as a transport too, or choosing it here on
-    # an install that already ran would not take. A FlashAir card is ResMed.
-    | . + (if $source == "flashair"
-           then {transport: "flashair", format: "resmed"} else {} end)
+    # source. So the option is written as a transport too, or changing it here
+    # on an install that already ran would not take: this tab wins, as the
+    # docs say. The format is left alone (a folder may hold a Prisma or an
+    # S.Box), except that a FlashAir card is ResMed.
+    | . + {transport: $source}
+    | . + (if $source == "flashair" then {format: "resmed"} else {} end)
 
     # Set when the id came from the options, and never cleared from here: a
     # false would overwrite a pin someone put in config.json by hand.
