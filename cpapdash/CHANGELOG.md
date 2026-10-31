@@ -10,6 +10,10 @@
   CpapDash release that carries the Sleep Bridge receiver.
 
 ### Fixed
+- **Switching the database option to SQLite now means SQLite.** The server
+  fields a previous choice had saved stayed in the configuration beside the
+  new type, and CpapDash, seeing a host, kept opening the server (with port
+  0) and never the file. They are cleared when the option says sqlite.
 - **What CpapDash keeps beside its config now survives a restart.** The
   service's data directory pointed at the image's /config, which in the
   add-on is a throwaway volume the Supervisor replaces whenever it recreates
