@@ -1,5 +1,193 @@
 # Changelog
 
+## 6.0.0
+
+The Sleep Bridge component ships in the published builds, and the devices that
+stream a night here now take their firmware from here too.
+
+### Added
+- **The Sleep Bridge component is in the published builds.**
+  `cmake/sleepbridge-pins.cmake` pins Sleep Bridge component 0.3.0, as a
+  versioned asset on this repository's releases, for Linux amd64, Linux
+  arm64 and the 32-bit Raspberry Pi. The published Docker image (and so the
+  Home Assistant add-on) and the Raspberry Pi zip are built with
+  `BUILD_WITH_SLEEPBRIDGE=ON`, so they accept a Sleep Bridge instead of
+  refusing every bridge with "not in this build". A build from source stays
+  without it unless asked (`-DBUILD_WITH_SLEEPBRIDGE=ON`, or
+  `--build-arg SLEEPBRIDGE=ON` for a Docker build of your own).
+- **The Sleep Bridge's night is live.** While a bridge streams, hms-cpap
+  reads the rebuilt card as it grows and pushes what is happening to its
+  MQTT broker beside the burst cycle's own `cpap/<device_id>/realtime/*`
+  topics: `realtime/mask` (ON when a session's therapy files grow, OFF when
+  the machine writes its STR after therapy or nothing was written for five
+  minutes; retained), `realtime/event` (one message per new apnea, hypopnea
+  or other event as the machine scores it) and `realtime/live_events` (the
+  counts per type; retained). Every rebuild that writes card files wakes the
+  sync, so the night is read seconds after the bridge streamed it instead of
+  at the next interval. When MQTT is configured but not connected, each
+  dropped live message is logged. The night's record still comes from the
+  sync parsing the files; this is the live view. "The live night" in
+  `docs/SLEEP_BRIDGE_LOCAL_STREAM.md`.
+- **A Mule & Miner's firmware updates from here.** A unit streaming to this
+  host never hears from the cloud, so Settings, "Mule & Miner", lists each
+  unit with the mule and miner versions it runs, says when the published
+  manifest has a newer one, and offers an Update button (the mule first, then
+  the miner) and a file input for an image you have. The image goes to the
+  unit over the local network and the job is followed through the unit's
+  restart. Only in the unit's downtime: while a night is open on it
+  (streaming, or streamed and not yet landed here) the request is refused,
+  and the job checks again before each image goes. Nothing is queued.
+  `GET /api/mule/{serial}/firmware`, `POST /api/mule/{serial}/update`,
+  `GET /api/mule/{serial}/update`; "Updating the unit's firmware" in
+  `docs/MULE_LOCAL_STREAM.md`.
+- **A Sleep Bridge's firmware updates from here.**
+  `POST /api/sleepbridge/{bridge}/update` takes an image you have (raw body
+  or a multipart file), checks that it is a Sleep Bridge image, and sends it
+  to the bridge over its own stream connection. The bridge writes it as it
+  comes, answers, and restarts into it only on success; its next hello
+  carries the version it runs. Refused while a night is open on the bridge
+  (a write landed in the last 15 minutes), while the bridge is offline, or
+  while an update already runs. Nothing is queued. `GET /api/sleepbridge`
+  gains `fw_version`, `night_open` and `update` per bridge, and
+  `GET /api/sleepbridge/{bridge}/update` follows the job. Settings gains a
+  "Sleep Bridge" section with a card per bridge: its firmware, a file input
+  and the update as it runs. "Updating the bridge" in
+  `docs/SLEEP_BRIDGE_LOCAL_STREAM.md`.
+- **A Mule & Miner's two Bluetooth switches, from Settings.** The `config`
+  command over the local stream now takes `as11_enabled` (the machine's own
+  Bluetooth mode) and `o2_enabled` (the O2 ring) beside `hms_url` and
+  `hms_port`, one switch at a time. Settings shows both switches as the
+  unit's last state reports them, posts the command on a click, and says
+  queued, sent or refused (with the unit's reason) beside the switch until
+  the next state agrees with what was asked.
+- **The Raspberry Pi build carries Bluetooth.** The Pi zip can pair an
+  AirSense 11 or an O2Ring directly, as the Docker image and the add-on
+  already could.
+
+### Changed
+- **Sleep Bridge: the card's geometry is kept in `batches/geometry.json`.**
+  The layout that decides where every streamed sector belongs (sectors per
+  cluster, where the data and the FATs begin, the root cluster), the card it
+  describes, where it came from and what confirmed it, as a small readable
+  file written durably when the layout is first trusted and whenever it
+  changes, read at start before any batch is fed. A restart neither forgets
+  the layout nor holds the session until the bank proves it again; a later
+  boot sector that says otherwise wins and rewrites it. It replaces the
+  opaque `rebuild.state`, which is read once and removed. The status shows
+  it under each bridge's `rebuild.geometry`. A card statement that carries
+  the bridge's layout (a stream that began after the bridge read the boot
+  sector) is now handed to the rebuild as a hypothesis, tested on the writes,
+  instead of being dropped. The pinned component carries what this needs.
+- **Bluetooth: the adapter is switched on, rf-kill is named, and every link
+  call has a timeout.** Before any scan or connect, for the AirSense 11 and
+  the O2 ring alike, hms-cpap reads the adapter's state and switches it on
+  when it is off. When the adapter is soft-blocked by rf-kill it lifts the
+  block where it can; where it cannot, one log line names rf-kill and the
+  command that lifts it, and Settings says "Bluetooth is switched off on
+  this computer (rf-kill)" instead of telling you the machine is out of
+  range. Every call on the link (connect, disconnect, a write, a
+  subscription, discovery) carries a timeout: a write the machine never
+  acknowledged used to hold the first summary pull after a pairing for
+  minutes with nothing in the log; it now fails the pull with a clear note.
+  After a pairing ends the device record is forgotten, so the next scan
+  finds the machine under its own name, never a cached one under a generic
+  name.
+- **Settings: the AirSense 11 section no longer asks for a Bluetooth
+  address** (discovery is automatic), and the pairing's Confirm and Cancel
+  buttons sit in a spaced row, Confirm primary and Cancel secondary.
+
+### Fixed
+- **A local folder night growing by less than a KB is a change.** A Local
+  folder source now lists each file's exact size, and the collector compares
+  exact bytes where the source gives them. Before, a night file that grew by
+  a few hundred bytes between two syncs read as unchanged, and a night still
+  being written (a Sleep Bridge's rebuilt card, for one) could be closed
+  early. A source change costs one re-read of the open night.
+- **A Bluetooth night is a session.** A night hms-cpap streamed from an
+  AirSense 11 (its own Bluetooth, or a Mule & Miner sending to it) was written
+  under `<data dir>/as11/<serial>/DATALOG/` and nothing read it: the burst
+  cycle walks only the configured source, so the night had no session row and
+  the dashboard showed only a card's copy, when there was one. The night now
+  goes through the same grouping and parser as a card folder when it ends
+  (and at start-up for nights on disk the database does not hold), under the
+  install's `device_id`, with its files recorded as `as11/<serial>/...`, its
+  metrics, and the night's summary and MQTT publish. A card source reading
+  the same machine wins the stretches it carries: a card session overlapping
+  a Bluetooth one in time replaces it; elsewhere the Bluetooth session stays.
+
+## 5.8.0
+
+Three new ways for a night to reach hms-cpap, none of them a WiFi SD card.
+
+### Added
+- **Sleep Bridge receiver.** A Sleep Bridge on the local network streams its
+  card's sector writes to `ws://<host>:8894/sleepbridge/v1/device`
+  (`sleep_bridge` in `config.json`, on by default, port 8894), and hms-cpap
+  rebuilds the card's files under `<data dir>/sleepbridge/<bridge>/` in the
+  machine's own layout, to be read as a Local folder. `GET /api/sleepbridge`
+  lists every bridge with its folder, machine and card format;
+  `POST /api/sleepbridge/command` sends `stream`, `reboot`, `logs`,
+  `restate` or `config_reset`. The part that rebuilds files from the stream
+  is a prebuilt component under its own licence, linked only with
+  `-DBUILD_WITH_SLEEPBRIDGE=ON`; a build without it still listens and refuses
+  every bridge, so a bridge's setup test fails rather than pointing at a
+  receiver that cannot use its stream. Protocol in
+  `docs/SLEEP_BRIDGE_LOCAL_STREAM.md`.
+- **Mule & Miner local stream.** A Mule & Miner in AirSense 11 Bluetooth mode
+  sends the machine's night to `ws://<host>:8894/mule/v1/device` instead of
+  the cloud. The night is written live as a card under
+  `<data dir>/as11/<machine serial>/`: BRP, PLD and SAD grow block by block,
+  each a valid EDF at every moment, and the machine's own scored events go
+  into EVE and CSL as they arrive. Every block and event wakes the sync at
+  once; with MQTT on, each event and each therapy start and end is published
+  live (`cpap/<device_id>/live/...`, discovered by Home Assistant). After the
+  night the unit is asked for the machine's identification, summary and
+  settings history. `GET /api/mule` lists the units, `POST /api/mule/command`
+  sends `config` (`hms_url`, `hms_port`), `reboot`, `logs`, `restate`,
+  `reset`, `as11_pair` or `as11_download`. Protocol in
+  `docs/MULE_LOCAL_STREAM.md`.
+- **AirSense 11 over the computer's own Bluetooth** (`airsense11_ble` in
+  `config.json`; Linux with BlueZ, a build with `-DBUILD_WITH_BLE=ON`). Pair
+  from Settings with the code on the machine's screen; the pairing is kept in
+  `<data dir>/as11.json`. hms-cpap reads the machine's daily summary and its
+  live night, into the same card folder as above. The O2Ring-S in direct
+  Bluetooth mode shares the Bluetooth layer.
+- **STR.edf and Identification.json for a Bluetooth night.** The machine's
+  Summary days are laid into the STR layout of its model, with the recording
+  field written for the machine, so the folder is a card root OSCAR and the
+  parser open as one. The layouts of eight AirSense 11 and AirCurve 11
+  models are built into the binary (`str-layouts/`, STR headers cut from a
+  card of each model with the patient and recording fields blanked); a file
+  of the same name under `<data dir>/str-layouts/` wins, which is how a new
+  model gets one before the next release. The settings fields stay -1: the
+  machine's settings history is kept but not read yet.
+- **The Docker image is built with direct Bluetooth** (`BUILD_WITH_BLE=ON`);
+  give the container the host's D-Bus (`-v /run/dbus:/run/dbus:ro`). Without
+  it the feature reports no adapter and everything else runs.
+
+### Changed
+- **An existing STR.edf is appended to, never rewritten.** A folder that
+  already holds an STR.edf, from a card copy or from earlier nights, keeps
+  every record byte for byte: a new day is appended (an unreported day in
+  between gets a day-off record, so the record index stays the date), the
+  file's last day is revised in place on its own record when the Summary
+  carries it, a day before the last is left as it is, and the record count is
+  written after the records, so a reader never sees a count the file does not
+  back. Nothing is appended into a file that names another machine or whose
+  signals differ from the model's layout; that is said and the file is left
+  alone.
+- **The stream port is its own field** on a Sleep Bridge and a Mule & Miner,
+  8894 unless changed. The `stream` command takes `port`, the mule `config`
+  command takes `hms_port` (alone or with `hms_url`), and the start-up
+  message for a port other than 8894 names the port the devices must be set
+  to instead of saying no bridge will reach it.
+- The image's Drogon (1.9.0, built from source) reads a fragmented WebSocket
+  message to its end; the stock library stopped at the first fragment, so a
+  bridge's hello was never answered.
+- The web UI's page fallback answers on the web port only.
+- The Pi package lists follow the Dockerfile.
+- The parser pin moves to 8.9.2.
+
 ## 5.7.1
 
 ### Fixed
