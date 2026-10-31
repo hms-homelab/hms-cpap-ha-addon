@@ -64,7 +64,7 @@ ports:
   8894/tcp: 8894
 ports_description:
   8893/tcp: Direct web UI and API access, bypassing Ingress. Leave empty to use Ingress only.
-  8894/tcp: Sleep Bridge stream. A Sleep Bridge set to "My hms-cpap" sends its card here. Only the stream is served on this port.
+  8894/tcp: Sleep Bridge stream. A Sleep Bridge set to "My hms-cpap" sends its card here, always to 8894, so keep it at 8894. Only the stream is served on this port.
 
 # The host's system D-Bus, where Home Assistant OS runs BlueZ. CpapDash reaches
 # Bluetooth only through it (an AirSense 11 or AirCurve 11 read over its own
