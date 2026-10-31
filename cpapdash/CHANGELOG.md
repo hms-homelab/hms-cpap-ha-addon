@@ -264,6 +264,10 @@ Three new ways for a night to reach hms-cpap, none of them a WiFi SD card.
 - The parser pin moves to 8.9.2.
 
 ### Fixed
+- **Switching the database option to SQLite now means SQLite.** The server
+  fields a previous choice had saved stayed in the configuration beside the
+  new type, and CpapDash, seeing a host, kept opening the server (with port
+  0) and never the file. They are cleared when the option says sqlite.
 - **What CpapDash keeps beside its config now survives a restart.** The
   service's data directory pointed at the image's /config, which in the
   add-on is a throwaway volume the Supervisor replaces whenever it recreates

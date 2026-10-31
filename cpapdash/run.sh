@@ -262,6 +262,13 @@ jq -n \
     | (.database |= with_entries(select(.value != "" and .value != null)))
     | (.myair   |= with_entries(select(.value != "" and .value != null)))
 
+    # Chosen SQLite means SQLite. The overlay drops empty strings, so a server
+    # the options once named would otherwise stay in the saved config beside
+    # type sqlite, and the service, seeing a host, kept opening the server
+    # (with port 0, since that one is a number and does land) and never the
+    # file. The server fields go when the option says sqlite.
+    | (if $db_type == "sqlite" then .database |= del(.host, .port, .name, .user, .password) else . end)
+
     # A saved config carries transport, and the service reads it ahead of
     # source. So the option is written as a transport too, or changing it here
     # on an install that already ran would not take: this tab wins, as the
