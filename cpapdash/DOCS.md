@@ -171,10 +171,11 @@ choose **My hms-cpap** and type your Home Assistant's address, for example
 the CPAP machine off and on once, outside therapy, so the card's layout can be
 trusted.
 
-The stream arrives on port 8894, which the add-on publishes by default. Only
-the stream answers there, not the web UI or the API, and it has no login: keep
-it on your local network. If no Sleep Bridge points here, you can clear the
-port in the add-on's Network panel.
+Type the address alone, with no port: the bridge always connects to port
+8894. The add-on publishes 8894 as 8894 by default; leave it at 8894, since a
+bridge reaches no other port. Only the stream answers there, not the web UI or
+the API, and it has no login: keep it on your local network. If no Sleep
+Bridge points here, you can clear the port in the add-on's Network panel.
 
 The rebuilt card lands in `/data/sleepbridge/<bridge>/`, in the machine's own
 card layout (a ResMed AirSense or a BMC / React Health Luna). The protocol is

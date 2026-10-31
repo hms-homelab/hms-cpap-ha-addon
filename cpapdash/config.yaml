@@ -64,7 +64,7 @@ ports:
   8894/tcp: 8894
 ports_description:
   8893/tcp: Direct web UI and API access, bypassing Ingress. Leave empty to use Ingress only.
-  8894/tcp: Sleep Bridge stream. A Sleep Bridge set to "My hms-cpap" sends its card here. Only the stream is served on this port.
+  8894/tcp: Sleep Bridge stream. A Sleep Bridge set to "My hms-cpap" sends its card here, always to 8894, so keep it at 8894. Only the stream is served on this port.
 
 # want, not need: CpapDash is fully usable through its own web UI with no
 # broker at all, so refusing to start without one would be wrong. When a broker
