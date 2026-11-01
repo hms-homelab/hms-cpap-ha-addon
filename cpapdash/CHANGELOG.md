@@ -1,5 +1,27 @@
 # Changelog
 
+## 6.0.1
+
+### Fixed
+- **A chunk lost from a ranged ez Share read no longer lands in the file.** A
+  reply can finish normally with a chunk missing from the middle, and the next
+  read used to resume past the hole, leaving the wrong data behind it. A reply
+  shorter than its `Content-Range` is now put back and asked for again. A
+  transfer cut by the link is not, and keeps what landed. A range that starts
+  anywhere but where it was asked is put back too, and a reply longer than its
+  `Content-Range` (a file still being written) keeps the span it declared.
+- **A checkpoint that didn't land is asked for again.** It used to get the
+  listing's size in `checkpoint_files` when another file of the night landed,
+  which read as unchanged from then on, so the night closed with it short.
+- **One 200 to a range no longer turns ranges off on an ez Share.** It put the
+  rest of the night on whole-file reads until the process restarted. It now
+  takes three in a row with no 206 between, and falling back keeps the local
+  copy until the full file lands.
+- **Two AirSense 11 summaries saved within the same clock tick are read in
+  date order.** They share a write time, so a day both carry could come from
+  the older one, depending on how the folder listed them. The file name, which
+  holds the summary's date, now breaks the tie.
+
 ## 6.0.0
 
 The Sleep Bridge component ships in the published builds, and the devices that
