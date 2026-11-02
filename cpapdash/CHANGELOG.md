@@ -1,5 +1,28 @@
 # Changelog
 
+## 6.0.3
+
+Three more steps toward an AirSense 11 night read over Bluetooth that OSCAR
+reads like the card's, all from @rccoleman.
+
+### Fixed
+- **The Bluetooth STR.edf carries the machine's settings** (#47). The machine
+  is asked for its settings with the Summary and they are kept as
+  `SETTINGS/CurrentSettings.json` (a newer copy replaces an older one, never
+  the other way round). Each day with usage from the day they were applied
+  gets `Mode` and the `S.*` fields, where they were `-1`, so OSCAR knows the
+  night's pressure mode and shows its pressure charts. Settings with no usable
+  applied date are skipped rather than dated 1970.
+- **The rebuilt night's files carry the card's checksums, model ids and header
+  text** (#46). BRP, PLD and the oximetry file end each record with a `Crc16`,
+  every file carries the card's header checksums, the recording field names
+  the model (`MID`/`VID`), the oximetry file is `_SA2.edf` with `Pulse.1s` and
+  `SpO2.1s` as the card's, and `Identification.crc` sits beside
+  `Identification.json`.
+- **An O2 Ring file pulled over Bluetooth is kept raw** (#48) in the archive's
+  `DATALOG`, beside the readings stored from it, so the original file is there
+  to import again.
+
 ## 6.0.2
 
 ### Fixed
