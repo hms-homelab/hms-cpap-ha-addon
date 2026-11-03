@@ -2,13 +2,21 @@
 
 ## 6.0.4
 
-The log page follows the end and loads the past as you scroll, with the idea
-from @rccoleman (#49).
+Bluetooth works in the add-on (hms-homelab/hms-cpap#50), and the log page
+follows the end and loads the past as you scroll, with the idea from
+@rccoleman (hms-homelab/hms-cpap#49).
+
+### Added
+- **Port 8894 is published for the Sleep Bridge stream.** A Sleep Bridge set
+  to "My hms-cpap" streams its card to the add-on on 8894. Only the stream is
+  served on that port, never the web UI or the API, and 8893 stays as it was.
+  Clear the port in the Network panel if no Sleep Bridge points here.
 
 ### Changed
 - **The Logs page opens at the latest line** and follows it while you are at
-  the bottom; if you scroll up to read, it leaves you where you are (#49,
-  thanks @rccoleman). Auto-refresh stays off until you turn it on.
+  the bottom; if you scroll up to read, it leaves you where you are
+  (hms-homelab/hms-cpap#49, thanks @rccoleman). Auto-refresh stays off until
+  you turn it on.
 - **A refresh asks only for what is new.** `GET /api/logs` takes a byte cursor:
   `after` (with `file_id`) answers the lines written since an earlier answer's
   `end`, and `before` answers the page that ends at an earlier answer's
@@ -22,16 +30,9 @@ from @rccoleman (#49).
   line count you pick is the size of the first load and of each older page.
   The page holds up to 20,000 lines and lets the far end go past that.
 
-## Unreleased
-
-### Added
-- **Port 8894 is published for the Sleep Bridge stream.** A Sleep Bridge set
-  to "My hms-cpap" streams its card to the add-on on 8894. Only the stream is
-  served on that port, never the web UI or the API, and 8893 stays as it was.
-  Clear the port in the Network panel if no Sleep Bridge points here.
-
 ### Fixed
-- **Bluetooth works in the add-on** (#50, thanks @TLaren). The add-on now asks
+- **Bluetooth works in the add-on** (hms-homelab/hms-cpap#50, thanks
+  @TLaren). The add-on now asks
   the Supervisor for the host's D-Bus (`host_dbus: true`), where Home
   Assistant OS runs BlueZ. Without it every Bluetooth call failed with
   "Failed to open bus", so an AirSense 11 or AirCurve 11 could not be paired
