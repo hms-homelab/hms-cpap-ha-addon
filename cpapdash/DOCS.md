@@ -83,6 +83,19 @@ Nothing is ever written back to ResMed; the integration is read only.
 
 **`log_level`** Reserved for future use.
 
+## Bluetooth
+
+CpapDash can read an AirSense 11 or AirCurve 11 over the machine's own
+Bluetooth (its daily summary and its live night, no card involved), and an O2
+Ring directly. It uses the Bluetooth adapter Home Assistant already has, through
+the host's BlueZ; the add-on asks for access to it, so there is nothing to set
+here.
+
+Turn it on in CpapDash's own **Settings, AirSense 11 over Bluetooth**, then
+press **Pair AirSense 11**, read the code off the machine's screen and type it
+within the minute the machine allows. The machine holds one pairing at a time,
+so pairing CpapDash replaces its link to the myAir app on your phone.
+
 ## Moving an existing install into Home Assistant
 
 If you already run CpapDash as a service or in Docker and want the add-on to take

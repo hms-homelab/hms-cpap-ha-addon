@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Bluetooth works in the add-on** (#50, thanks @TLaren). The add-on now asks
+  the Supervisor for the host's D-Bus (`host_dbus: true`), where Home
+  Assistant OS runs BlueZ. Without it every Bluetooth call failed with
+  "Failed to open bus", so an AirSense 11 or AirCurve 11 could not be paired
+  and an O2 Ring could not be read directly, whatever adapter the host had.
+  DOCS.md gains a Bluetooth section, with the note that pairing replaces the
+  myAir app's link to the machine.
+
 ## 6.0.3
 
 Three more steps toward an AirSense 11 night read over Bluetooth that OSCAR
