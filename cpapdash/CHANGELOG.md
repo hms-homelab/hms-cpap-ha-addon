@@ -1,5 +1,24 @@
 # Changelog
 
+## 6.0.5
+
+A BMC / React Health Luna card is read over an ez Share, or through a Mule and
+Miner in local mode, not only from a folder (SDD-060).
+
+### Fixed
+- **A Luna's card is read over an ez Share.** A Luna runs an ez Share in its
+  slot, which hms-cpap did not offer: BMC was a local folder only. Each burst
+  now copies the card's root files into `<archive>/bmc` and reads that copy as
+  it reads a local card. A raw file that grew is appended once its last 4 KB
+  still match, otherwise taken whole. A session shows once the mask comes off:
+  the ez Share does not see the card change while the Luna is recording.
+- **A file is judged by its size and its card stamp.** The copy's manifest
+  keeps both, since an ez Share lists sizes in whole KB and misses a change
+  under a KB.
+- **Settings offers BMC / React Health Luna under ez Share**, and the setup
+  wizard asks which machine sits behind an ez Share or a Mule and Miner instead
+  of assuming ResMed.
+
 ## 6.0.4
 
 Bluetooth works in the add-on (hms-homelab/hms-cpap#50), and the log page
