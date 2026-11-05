@@ -298,7 +298,14 @@ jq -n \
     ' > "$CONFIG_DIR/.config.overlay.json"
 
 # Recursive merge, overlay wins. Everything the add-on does not set survives.
-jq -s '.[0] * .[1]' "$BASE" "$CONFIG_DIR/.config.overlay.json" > "$CONFIG"
+# Except a database server under type sqlite: leaving it out of the overlay
+# keeps the saved one, and the service, seeing a host, opens that server and
+# refuses to start when it is gone. So it is dropped again after the merge.
+jq -s '.[0] * .[1]
+    | if .database.type == "sqlite"
+      then .database |= del(.host, .port, .name, .user, .password)
+      else . end' \
+    "$BASE" "$CONFIG_DIR/.config.overlay.json" > "$CONFIG"
 rm -f "$BASE" "$CONFIG_DIR/.config.overlay.json"
 
 mkdir -p "$ARCHIVE_DIR" 2>/dev/null || \

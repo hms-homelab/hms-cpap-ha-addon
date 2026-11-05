@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Choosing SQLite drops a database server saved before.** Since 6.0.4 only
+  the server typed into the options was cleared; one already saved in the
+  add-on's configuration stayed, and CpapDash opened that server instead of the
+  SQLite file, refusing to start when it was gone.
+
 ## 6.0.6
 
 A Sleep Bridge streams into hms-cpap on macOS and Windows, not only on Linux,
