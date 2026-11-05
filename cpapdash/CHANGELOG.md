@@ -1,5 +1,95 @@
 # Changelog
 
+## 6.1.0
+
+Direct Bluetooth works on macOS and Windows, not only on Linux, every device
+has its own card on a new Devices page, and the dashboard shows the pressure
+the machine delivered.
+
+### Added
+- **Direct Bluetooth on macOS, Windows and Linux.** The AirSense 11 and the
+  O2 ring are read over this computer's own Bluetooth on macOS and on
+  Windows 10 and 11, not only on Linux. The macOS and Windows downloads are
+  built with it. Every connect starts from a fresh scan that finds the device
+  by its advert. `hms_cpap --ble-scan [seconds]` lists what is advertising and
+  never connects. On Windows, use the Bluetooth adapter maker's own driver:
+  with Windows' generic driver some adapters (a Realtek combo, for one) find
+  the device but never connect to it.
+- **The computer stays awake while a night streams over Bluetooth**, and only
+  then: it may idle-sleep again once the night ends or the link drops.
+- **Windows switches its Bluetooth radio on** when it is off, and Settings
+  says why when Windows refuses. macOS gives an app no way to do this, so
+  Settings still tells you to switch it on there.
+- **AirSense 11 settings over Bluetooth.** The machine's settings are kept on
+  the first connect, and each day read over Bluetooth carries that day's
+  mode, EPR and pressures, the same as a card's day.
+- **Mask on and off in Home Assistant.** A "Mask" binary sensor is announced
+  for every source: a Sleep Bridge, a Mule & Miner, an AirSense 11 over
+  Bluetooth, and an ez Share, FlashAir or local folder (there about two
+  minutes late, since the card only shows it once the file stops growing).
+  The change carries when it happened and when it was seen.
+- **Devices page.** Every device this hms-cpap reads or talks to on one page,
+  one card each (Mule & Miner, Sleep Bridge Lite, an O2 ring, an ez Share or
+  FlashAir card, an AirSense 11 over Bluetooth), with when it was last seen,
+  its firmware, its own commands and the progress of an update. A command or
+  update that could cost tonight's recording asks first while the machine
+  records. Devices can be renamed, forgotten, or switched back to the
+  CpapDash cloud.
+
+### Changed
+- **Therapy pressure shows the pressure the machine delivered, not the
+  mask's** (#56). With EPR the mask pressure drops on every breath out, so a
+  minimum of 7 with EPR 3 showed about 5. The dashboard's Therapy Pressure
+  panel, the 30-day trend, the PDF report, the insights and the AI summary
+  now use the machine's delivered pressure. The mask median stays as its own
+  card. An existing install fills its history on the first start after the
+  upgrade.
+- **Live MQTT topics for the Sleep Bridge**: `realtime/event`'s source is now
+  `sleep_bridge` (was `sleepbridge`), and `realtime/live_events` counts since
+  the mask went on (was since start). The live MQTT client's id ends in
+  `_live`.
+- The CpapDash parser is updated to 2026.8.6.
+
+### Fixed
+- **The Mule & Miner update check finds new firmware again.** The file it
+  read was no longer published, so the Devices page never saw a new version
+  and only an upload from a file could update a unit. It now asks CpapDash
+  for that unit's latest released firmware, using the pairing code printed on
+  the unit, and checks every image before sending it.
+- **Home Assistant names an AirSense 11 read over Bluetooth** by its model,
+  not "ResMed ?".
+- **An O2 ring read directly does one thing at a time.** A file pull from the
+  web page while the live reading ran could lose the file.
+- **Bluetooth on Linux outside Docker** finds the adapter: it looked on the
+  wrong bus whenever a desktop or SSH session was open.
+- **Phone layout.** The top menu wraps onto more rows instead of hiding
+  pages off the side, and the "Nothing is being imported" banner wraps, so no
+  page scrolls sideways on a phone.
+- **Löwenstein event times and durations were ten times too long** (#54).
+  A prisma card's event file counts in tenths of a second; it was read as
+  seconds, so every event on the Events page lasted ten times its length and
+  sat ten times further into the night, often past its end. Counts and the
+  AHI were right. The fix is in cpapdash-parser. A night already imported
+  keeps its old times, because an upload skips nights it already has: Remove
+  night on the Sessions page, then upload the card again.
+- **The session page's AHI for a night of several sessions counted every
+  event** (#54): flow limitation, snore, RERA and large leak included. It now
+  counts apneas and hypopneas, as the sessions list and the dashboard do.
+- **The Upload page says what became of the zip** (#55). Since the import
+  moved to the background worker it said "Imported 0 night(s)" for every zip,
+  good or bad, and a refusal only reached the log. It now waits for this
+  upload's own result and shows the nights found, or the reason it was
+  refused.
+- **A zip made by Windows PowerShell's `Compress-Archive` is read** (#55). It
+  writes `\` between folders, which Linux and macOS took as part of one long
+  file name, so the card's folders never appeared. A zip entry that would land
+  outside the upload folder (`..`, an absolute path or a drive) is now skipped.
+
+### Build
+- The Windows build pins vcpkg to one commit and keys its package cache on
+  that commit and the compiler, so a new runner image no longer forces a full
+  rebuild of every dependency.
+
 ## Unreleased
 
 ### Fixed
