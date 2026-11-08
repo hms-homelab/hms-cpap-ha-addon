@@ -1,5 +1,111 @@
 # Changelog
 
+## 6.2.0
+
+A BMC / React Health Luna charts its flow and pressure, live while the night
+is written, and so does a Philips DreamStation card whose files are plain.
+hms-cpap reads a Philips DreamStation 2 over Bluetooth after the
+night, from this computer's own Bluetooth or through a Mule & Miner, and the
+setup wizard opens on the Sleep Bridge.
+
+### Added
+- **Philips DreamStation 2 over this computer's Bluetooth.** Turn it on in
+  Settings, DreamStation 2 over Bluetooth, then pair it from the Devices page.
+  The machine shows a six-digit code and so does the page (macOS shows it in
+  a window of its own): check they match and confirm on both, with the
+  blower off. The DreamStation keeps one Bluetooth pairing, so pairing
+  hms-cpap replaces DreamMapper on that machine. After each night the
+  session's summary and events are read (Bluetooth carries no waveform) and
+  imported like any other night. Linux, macOS and Windows; not in a build
+  without Bluetooth.
+- **When the DreamStation 2 is read is your choice**, in Settings: once a day
+  at a time you pick (11:00 by default), or only when you press Read now. In
+  both, a night's end reported by another source here (a Sleep Bridge, a Mule
+  & Miner, the AirSense 11 over Bluetooth, the O2 ring) also starts a read.
+  Nothing is read while a mask is on.
+- **Nights from a day you pick.** The first read of a used machine imports
+  only from the day of pairing, or a day you set on the Devices page; older
+  sessions (a previous owner's) are skipped and never kept.
+- **A DreamStation 2 through a Mule & Miner.** A Mule & Miner whose miner
+  reads a DreamStation 2 over Bluetooth now shows it on its Devices card: a
+  DreamStation 2 switch beside the AirSense 11 and O2 ring switches, pairing
+  with the machine's code shown on the page, Read now, Forget the pairing,
+  the last read and the import day. Its nights are imported the same way, on
+  the same Settings choice. It needs Mule & Miner firmware with DreamStation
+  2 support.
+- **A card tree for OSCAR from a Mule & Miner's DreamStation 2.** Beside the
+  nights, each read keeps the machine's files as the machine itself writes
+  them to its card, in a card's layout, under the data folder's
+  `ds2card/<serial>/P-SERIES/`. OSCAR 2.1.1 imports that folder like a card.
+- **Sleep Bridge in the setup wizard.** The source step of the web wizard and
+  of the desktop app's first-run wizard offers the CpapDash Sleep Bridge,
+  first and selected. It needs nothing set up: the step says which address
+  and port to point the bridge at.
+- **A BMC / React Health Luna charts its flow and pressure.** Each minute of a
+  Luna night now has its flow (your breathing, leak taken out, as for a
+  ResMed), the pressure the machine measured, tidal volume, minute
+  ventilation, Ti, Te and I:E. The scales were measured against the machine's
+  own screen. The measured pressure is called Pressure, not the mask's: the
+  card does not say where it is sensed.
+- **A Philips DreamStation card with plain files, charted live.** Card
+  format "Philips Respironics" in Settings reads a DreamStation card whose
+  files are not encrypted, from a folder (a card reader, a card shared on the
+  network, a folder a Mule & Miner fills) or through an ez Share or a Mule &
+  Miner in proxy mode. While a session is being recorded the machine writes
+  flow only, so the night shows live its flow, breathing rate, I:E, tidal
+  volume and minute ventilation, and the pressure chart says "Pressure
+  arrives when the session ends". When it ends, the session closes at once
+  and the pressure the machine delivered (a 2-minute average) and its events
+  appear.
+- **A Luna night reads live while it is written.** A Luna session that grows
+  while hms-cpap watches its folder (a Sleep Bridge Lite rebuilding the card)
+  is shown as live, and the night page refreshes as for a ResMed. It closes
+  on its own data five minutes after it stops growing.
+
+### Fixed
+- **A minute with no reading is stored empty, not as 0.** A Luna night drew
+  flat lines at 0 for flow and pressure. A minute the machine did not
+  measure is now empty on SQLite, MySQL and PostgreSQL, so the chart leaves
+  a gap and the night's averages skip it.
+- **No empty chart tiles.** A channel the machine does not record (a Luna has
+  no flow limitation, snore index or mask pressure) no longer gets a tile.
+- **A session saved again as it grows takes its new end.** A Luna session
+  kept the end it had when first saved while its duration grew.
+- **Every Luna night already stored is read again once.** After an update,
+  each session on the card is read once more, not only the newest, so a
+  night stored before this release gets its flow and pressure in place of
+  the flat zeros, and its true end.
+- **A minute saved again takes its new readings.** A growing session's last
+  minute was stored as it stood when first saved, part of a minute, and kept
+  that way. On PostgreSQL, a session that named one minute twice could not be
+  saved at all.
+- **A Bluetooth-only AirSense 11 no longer shows "Nothing is being
+  imported"** (Fixes #59). With AirSense 11 over Bluetooth on and no local
+  folder set, every page said no local folder was configured, while the
+  nights were being imported. An empty folder with Bluetooth on is now a
+  Bluetooth-only setup: no banner, nothing logged as an error. A folder that
+  is set is still checked, and a folder changed in Settings is now seen by
+  that check without a restart.
+
+### Notes
+- **A DreamStation 2 card is charted only when its files are plain.** A
+  DreamStation 2 encrypts the files on its card, and hms-cpap does not
+  decrypt them: a card read through a Sleep Bridge Lite, an ez Share or a
+  Mule & Miner as the machine wrote it is reported as encrypted, and nothing
+  is stored from it. Bluetooth gives a session only once it has ended, with
+  its summary and events and no flow or pressure.
+- The README's machine table now says a Luna G3 is live through a Sleep
+  Bridge Lite, and after the night over an ez Share: both have carried real
+  Luna nights into hms-cpap.
+- A DreamStation card with plain files was tested on synthetic cards built
+  from the format; no real card of that kind has been read yet, so the table
+  says "Not tested yet" for it.
+- DreamStation 2 nights read over Bluetooth are not sent to SleepHQ yet.
+- Pairing a DreamStation 2 with this computer's Bluetooth has been tested
+  against a simulated machine only, on all three systems; pairing with a real
+  machine is not proven yet. The Mule & Miner path was checked against reads
+  a real unit made from a real DreamStation 2.
+
 ## 6.1.1
 
 The end of a streamed night reaches Home Assistant in a minute or two instead
