@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.2.2
+
+### Fixed
+- **A card session ends at its BRP's end, never on a timer** (SDD-068). The
+  live mask went off after 135 s without growth, so a slow card or a dropped
+  ezShare link ended the session mid night. Now the mask goes off only when
+  two bursts in a row list the BRP at its end with the same size and stamp.
+  A BRP still being downloaded, or a card that cannot be reached, leaves the
+  mask as it is. A BRP that is only a header does not turn it on. After a
+  reconnect, the changes are published in the order they happened.
+
 ## 6.2.1
 
 ### Removed
