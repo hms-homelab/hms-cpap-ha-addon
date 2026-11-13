@@ -1,5 +1,14 @@
 # Changelog
 
+## 6.2.3
+
+### Added
+- **`hms_cpap --as11-spool-probe <data_dir> <YYYY-MM-DD> [spool...]`**: a
+  bench probe for an AirSense 11 over Bluetooth. It uses the data dir's
+  pairing, pulls each named spool on its own link, saves it as
+  `<data_dir>/spool-probe/<name>.bin` and prints one `### SPOOL` line per
+  spool. It reads the first page of each spool only.
+
 ## 6.2.2
 
 ### Fixed
