@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **myAir stays on when the password is cleared after signing in.** Once
+  myAir is connected the add-on keeps a revocable token and tells you to clear
+  `myair_password`, but the next start saw the empty password before reading
+  that token and turned myAir off. It is now turned off only when there is
+  neither a password nor a saved sign-in.
+
 ## 6.3.0
 
 ### Restored

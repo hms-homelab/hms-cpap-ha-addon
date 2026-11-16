@@ -67,12 +67,6 @@ MYAIR_REGION=$(opt '.myair_region' 'NA')
 MYAIR_USERNAME=$(opt '.myair_username' '')
 MYAIR_PASSWORD=$(opt '.myair_password' '')
 
-# myAir needs both halves or it is not configured, whatever the toggle says.
-if [ "$MYAIR_ENABLED" = "true" ] && { [ -z "$MYAIR_USERNAME" ] || [ -z "$MYAIR_PASSWORD" ]; }; then
-    echo "[cpapdash] myair_enabled is on but the username or password is empty, leaving myAir off"
-    MYAIR_ENABLED=false
-fi
-
 # ---------------------------------------------------------------------------
 # MQTT, discovered rather than typed
 # ---------------------------------------------------------------------------
@@ -158,6 +152,15 @@ if [ -f "$CONFIG" ]; then
     # holding a revocable token instead would be lost.
     MYAIR_DEVICE_TOKEN=$(jq -r '.myair.device_token // ""' "$CONFIG" 2>/dev/null || echo "")
     MYAIR_REFRESH_TOKEN=$(jq -r '.myair.refresh_token // ""' "$CONFIG" 2>/dev/null || echo "")
+fi
+
+# myAir needs a username and something to sign in with: the password, or the
+# token saved by an earlier sign-in. Checked only now, after that token has been
+# read, because the password is meant to be cleared once the token exists, and
+# judging by the password alone switched myAir off for exactly those users.
+if [ "$MYAIR_ENABLED" = "true" ] && { [ -z "$MYAIR_USERNAME" ] || { [ -z "$MYAIR_PASSWORD" ] && [ -z "$MYAIR_REFRESH_TOKEN" ]; }; }; then
+    echo "[cpapdash] myair_enabled is on but the username is empty, or there is neither a password nor a saved sign-in, leaving myAir off"
+    MYAIR_ENABLED=false
 fi
 
 # Once a refresh token exists the password is not needed and is not written into
