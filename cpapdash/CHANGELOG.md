@@ -1,5 +1,50 @@
 # Changelog
 
+## 6.4.0
+
+### Added
+- **Send my nights to CpapDash.** A new switch in Settings,
+  CpapDash Cloud, off by default, that uses the same long-term token as the
+  equipment sync. When it is on, hms-cpap sends every card file it holds to
+  your CpapDash account over one WebSocket, `wss://api.cpapdash.com/socket/v1/hms`,
+  and nowhere else. CpapDash lists the install as a device named "HMS-CPAP",
+  which you can rename or make your default.
+  - Every source sends: the ez Share card's bursts, a Sleep Bridge's rebuilt
+    files and an AirSense 11 or AirCurve 11 read over Bluetooth. A file is
+    sent after it is on disk; collecting never waits on CpapDash, so the local
+    night carries on as before when CpapDash cannot be reached.
+  - A growing BRP or PLD goes from where the last send stopped; EVE, CSL, STR
+    and the other files go whole.
+  - What CpapDash has acknowledged is kept in a new `cpapdash_sent` table on
+    SQLite, MySQL and PostgreSQL, so a reconnect or a restart resumes where it
+    stopped. Turning the switch off or on clears it, and the next switch-on
+    sends every night again; CpapDash keeps one copy of each.
+  - Settings shows the stream's state, what was acknowledged, and why it
+    stopped: a revoked or regenerated token closes the connection, and the
+    server's own reason is shown.
+  - `GET /api/cpapdash/stream` reports the same state.
+
+### Changed
+- **Settings, CpapDash Cloud:** each checkbox sits before its label.
+
+## 6.3.1
+
+### Fixed
+- **"Regenerate AI summary" says when no summary was written** (#74). The
+  server answers `status: "failed"` when it will not write one, for example on
+  a night that has only myAir data and no detailed session, but the dashboard
+  said "Summary queued" anyway and nothing ever appeared. It now says no
+  summary was written for that night, with the reason when the reply gives one.
+
+### Changed
+- **The dashboard leaves out a card it has no data for.** A card with nothing
+  for the night or the source being viewed is no longer drawn as a frame of
+  zeros, dashes or empty chart axes. On a myAir-only install that removes the
+  key metrics that read "AHI 0.00 Excellent" for a night with no CPAP data,
+  the "Not enough data" insight and the empty 30-day charts. A recorded zero,
+  such as a night with no central apneas, still shows. The remaining cards
+  close up so the layout has no gaps.
+
 ## Unreleased
 
 ### Fixed
