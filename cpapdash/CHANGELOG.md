@@ -1,5 +1,45 @@
 # Changelog
 
+## 6.4.2
+
+### Fixed
+- **SleepHQ: the O2 Ring night goes up as an O2 Ring, and a refusal is a
+  failure** (#66). SleepHQ refused every ring CSV ("We couldn't find any
+  CPAP machine data in this upload") while the log said "exported". The
+  ring's import now names SleepHQ's O2 Ring device (69184); the card's
+  import names none, as before. The CSV goes up under its own name, not its
+  temp file's, and is named after the team's own ring when SleepHQ already
+  knows one (`O2Ring <serial>_<stamp>.csv`). After the upload, SleepHQ's
+  verdict is read back for up to three minutes: a refused import is logged
+  as a FAILED oximetry export with SleepHQ's reason.
+- **An AirSense 11 that BlueZ holds a stale object for recovers without a
+  host reboot** (#67). The machine was found ("already known") and every
+  connect ended "services not resolved in time" until the host rebooted:
+  another scanner on the adapter (Home Assistant) kept the cached object
+  looking live, so it was reused forever. Now each failed link with the
+  machine in sight is counted, and only failures move it on: after two in a
+  row the cached object is forgotten (RemoveDevice) and the machine is found
+  again by a fresh advert under its own name; if the next attempt fails too,
+  the Bluetooth adapter is powered off and on once, and the machine is found
+  again. Never while a night streams or an O2 Ring transfer runs in
+  hms-cpap; other devices linked on the adapter are named in the log before
+  the reset. A link that comes up ends the streak. Nothing here runs on a
+  timer, and a machine out of range, a radio that is off or no adapter never
+  escalate.
+- **Forget the pairing also drops BlueZ's object for the machine**, not only
+  the saved keys.
+
+### Added
+- **"Bluetooth adapter not recovering"** on the Devices page, distinct from
+  "Not connected", when the forget and the adapter reset did not bring the
+  link back (`bluetooth_stuck` in the AirSense 11 status).
+- **Reset Bluetooth** on the Devices page (`POST /api/airsense11/ble/reset`):
+  forgets the machine's BlueZ object and power-cycles the adapter now. It
+  answers 409 while a night streams, a pairing is open, or an O2 Ring
+  transfer is in progress, with a `reason` code (`streaming`,
+  `pairing_open`, `o2ring_transfer`) that the page shows in its own
+  language.
+
 ## 6.4.1
 
 ### Fixed
