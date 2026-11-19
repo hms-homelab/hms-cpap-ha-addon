@@ -1,5 +1,61 @@
 # Changelog
 
+## 6.4.6
+
+### Fixed
+- **Pairing a DreamStation 2 over Bluetooth on Linux and the Home Assistant
+  add-on no longer times out** (#83). hms-cpap asked BlueZ to pair with a call
+  that held the same connection BlueZ uses to deliver the six-digit code, so
+  the code reached the page only after the machine had given up. The pairing
+  request now leaves that connection free: the code reaches the page within a
+  couple of seconds, and the log says how long it took. Confirm on the
+  DreamStation within about 30 seconds of the code appearing.
+
+## 6.4.5
+
+### Added
+- **ez Share cards on firmware 4.4.0 are read without a directory listing**
+  (#53, thanks to Darafei Praliaskouski). These cards answer a folder listing
+  with their welcome page. After two such answers in a row, hms-cpap finds a
+  ResMed card's nights from STR.edf and the files' FAT short names, checks
+  each file by its EDF record count (bytes 236-243) or its `.crc`, and fetches
+  in small ranges that resume after a stall. It tries the listing again every
+  few refreshes and goes back to normal when the card lists. ResMed only, shown
+  on an AirSense 11, not through a Mule & Miner. Known costs on this card are
+  listed in SDD-076.
+
+### Fixed
+- **AI summaries use the prompt file set in Settings** (#77). The summary
+  generator read only `LLM_PROMPT_FILE`, once at startup, so a path set in
+  Settings, or a prompt saved in the Settings editor, was never used. The
+  editor and the generator now use the same file (the Settings path, then
+  `LLM_PROMPT_FILE`, then `llm_prompt.txt` in the data folder), read at every
+  summary, so an edit takes effect with no restart. The log names the prompt
+  each summary used, and the editor reports a failed save instead of "saved".
+- **A Sleep Bridge install's first nights no longer close as partial.** An
+  install reading a bridge's card folder told CpapDash its source was an ez
+  Share card until the bridge's first rebuild, so CpapDash closed those first
+  nights by the card rule and marked them incomplete. The bridge's folder now
+  says bridge from the first connection.
+
+## 6.4.4
+
+### Added
+- **Record an AirSense 11 night for support** (SDD-071). A new switch in
+  Settings, under AirSense 11 over Bluetooth, saves everything the machine
+  sends during each night to a file under
+  `<data folder>/as11/<serial>/capture/`, one line per message, to send with
+  that night's SD card folder. Off by default; nights are read the same with
+  it on. The night's stream also asks for the ASV fields (target ventilation,
+  I:E ratio, backup rate, intervals) and asks again without them if the
+  machine refuses. Nothing is recorded during pairing, and a connection that
+  never streamed leaves no file. Settings shows the last file and its size.
+- **A fresh install's dashboard says what to do next.** With no night yet the
+  dashboard was a heading and a disabled "Regenerate AI summary" button. It
+  now shows the CpapDash robot, "No nights yet", and two buttons: Upload a
+  card, and Open Settings to choose how hms-cpap reads the machine. In all
+  five languages.
+
 ## 6.4.3
 
 ### Fixed
