@@ -64,11 +64,18 @@ data_dir_writable() {
 
 # A directory that cannot be used: this run keeps its data in /data, says so
 # here, and tells the service, whose pages show a banner naming both.
+#
+# The run also writes the marker, naming /data as where its data went, so the
+# next start that can write the directory moves it across even when the
+# directory was a fresh install that never moved anything. A marker that is
+# already there is kept: it names the directory this install moved to, which
+# a later start still needs to catch up into or to move from.
 fall_back() {
     echo "[cpapdash] WARNING: data_dir $DATA_DIR_WANTED $1."
     echo "[cpapdash] WARNING: this run keeps its data in $HOME_DIR. Restart the add-on once $DATA_DIR_WANTED can be written."
     export HMS_CPAP_DATA_DIR_FALLBACK="$DATA_DIR_WANTED"
     CONFIG_DIR="$HOME_DIR"
+    [ -s "$MARKER" ] || printf '%s\n' "$HOME_DIR" > "$MARKER"
 }
 
 # A move that does not complete counts as a directory that cannot be written.
@@ -94,10 +101,10 @@ if [ -n "$DATA_DIR_WANTED" ]; then
         if ! data_dir_allowed "$DATA_DIR_WANTED"; then
             fall_back "is not under /share, /config or /media"
         elif [ -f "$DATA_DIR_WANTED/config.json" ]; then
-            if [ "$MARKED" = "$DATA_DIR_WANTED" ]; then
-                # This install moved here before. Whatever a fallback run left
-                # in /data and is not here yet moves across; nothing here is
-                # overwritten.
+            if [ "$MARKED" = "$DATA_DIR_WANTED" ] || [ "$MARKED" = "$HOME_DIR" ]; then
+                # This install moved here before, or a fallback run stored in
+                # /data since. Whatever is in /data and not here yet moves
+                # across; nothing here is overwritten.
                 move_to_wanted "$HOME_DIR"
             else
                 # Already holds a configuration: used as it is, /data untouched.
