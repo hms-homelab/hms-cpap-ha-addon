@@ -82,11 +82,16 @@ services:
 # share, for users whose card contents arrive on a network share Home Assistant
 # already mounts. ezShare is a network protocol and needs no mapping at all.
 #
-# No addon_config mapping: the generated configuration and the SQLite database
-# live in the add-on's own /data, so there is nothing here for a person to edit
-# by hand and no empty folder inviting them to try.
+# share, addon_config and media are also the three places the data_dir option
+# can put CpapDash's data directory (SDD-067): mounted at /share, /config and
+# /media. Left empty the data stays in the add-on's own /data, which Home
+# Assistant does not show in the file editor, Samba or share; these mappings
+# are what let a person reach it from outside the add-on. Nothing in them is
+# touched unless data_dir names it.
 map:
   - share:rw
+  - addon_config:rw
+  - media:rw
 
 # Everything here is optional. Leave it as it comes and the first start opens
 # CpapDash's own setup wizard through Ingress, which walks through the source and
@@ -101,6 +106,7 @@ options:
   device_name: ResMed AirSense 10
   device_id: ""
   archive_dir: ""
+  data_dir: ""
   database: sqlite
   db_host: ""
   db_port: 0
@@ -131,6 +137,10 @@ schema:
   # add-on's own storage; set it to carry on writing where you already write.
   device_id: str?
   archive_dir: str?
+  # Where CpapDash keeps everything it owns (SDD-067): a path under /share,
+  # /config or /media. Empty is /data, as before. Set on an existing install,
+  # the files move there on the next start.
+  data_dir: str?
   database: list(sqlite|postgresql|mysql)
   db_host: str?
   db_port: int(0,65535)?

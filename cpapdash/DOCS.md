@@ -81,6 +81,32 @@ Be aware of what this credential is: ResMed offers no scoped API key, so this is
 your actual myAir account password, stored in the add-on's own data directory.
 Nothing is ever written back to ResMed; the integration is read only.
 
+**`data_dir`** Where CpapDash keeps everything it owns: its configuration, the
+SQLite database, the Sleep Bridge banks and rebuilt cards, uploads, and the card
+archive unless `archive_dir` says otherwise. Left empty it is `/data`, the
+add-on's own storage, which survives updates but is not visible in the file
+editor, Samba or `share`. Set it to a folder under `/share`, `/config` (this
+add-on's config folder, `addon_configs/...` from outside) or `/media` to reach
+the data from outside the add-on. Anywhere else is refused.
+
+- **Set on an existing install**, the files move from `/data` to that folder on
+  the next start. The Log tab shows the progress, and opening the add-on while
+  it runs shows a progress page. A file already in the folder is never
+  overwritten. `/data` keeps a copy of `config.json`.
+- **A folder that already holds a `config.json`** is used as it is, and `/data`
+  is left alone.
+- **Changed to another folder**, the files move from the old one to the new one.
+- **A folder that cannot be written** at start (a share that is not mounted, a
+  full disk): CpapDash starts from `/data` for that run, with its settings and
+  its Sleep Bridge port from the copy, writes a warning to the log and shows a
+  banner on its pages. On the next start that can write the folder, what that
+  run stored in `/data` and the folder does not have yet moves across.
+- **Cleared**, CpapDash starts from `/data` again and the files stay in the
+  folder.
+
+A `local_dir` that points inside the old data directory, such as
+`/data/sleepbridge/<bridge>`, is changed to the same place in the new one.
+
 **`log_level`** Reserved for future use.
 
 ## Bluetooth
@@ -190,15 +216,17 @@ bridge reaches no other port. Only the stream answers there, not the web UI or
 the API, and it has no login: keep it on your local network. If no Sleep
 Bridge points here, you can clear the port in the add-on's Network panel.
 
-The rebuilt card lands in `/data/sleepbridge/<bridge>/`, in the machine's own
+The rebuilt card lands in `<data directory>/sleepbridge/<bridge>/` (the data
+directory is `/data` unless `data_dir` is set), in the machine's own
 card layout (a ResMed AirSense or a BMC / React Health Luna). The protocol is
 documented in hms-cpap's `docs/SLEEP_BRIDGE_LOCAL_STREAM.md`.
 
 ## Data
 
-The generated configuration and the SQLite database live in the add-on's own
-`/data` directory, which persists across add-on updates. Card files are archived
-there too. Nothing you need to edit by hand lives outside the Configuration tab.
+The generated configuration and the SQLite database live in the data
+directory, which persists across add-on updates: the add-on's own `/data`, or
+the folder `data_dir` names. Card files are archived there too. Nothing you
+need to edit by hand lives outside the Configuration tab.
 
 ## This is not a medical device
 
