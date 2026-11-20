@@ -11,26 +11,129 @@
 #
 set -eu
 
+# The Supervisor writes the options to /data and nowhere else, so this path
+# never follows the data directory (SDD-067).
 OPTIONS=/data/options.json
-# /data, not /config. /data is the add-on's own persistent directory, which is
-# the documented home for add-on state and survives an update. /config is Home
-# Assistant's user-facing app config folder; writing our generated file there
-# would put a machine-written file in a place a person is invited to edit.
-CONFIG_DIR=/data
-CONFIG="$CONFIG_DIR/config.json"
-
-# Everything else the service keeps goes under its data directory too: the
-# Sleep Bridge stream's banked batches and rebuilt card, supply events,
-# uploads. The image points that at /config, which here is an anonymous
-# volume the Supervisor drops whenever it recreates the container, so a
-# restart would throw away batches a bridge has already been told are safe.
-export HMS_CPAP_DATA_DIR="$CONFIG_DIR"
 
 opt() {
     # $1 = jq path, $2 = fallback when absent, null or empty
     value=$(jq -r "$1 // empty" "$OPTIONS" 2>/dev/null || true)
     if [ -z "$value" ]; then printf '%s' "$2"; else printf '%s' "$value"; fi
 }
+
+# ---------------------------------------------------------------------------
+# The data directory (SDD-067)
+# ---------------------------------------------------------------------------
+# Everything the service keeps lives under one directory: config.json, the
+# SQLite database, the Sleep Bridge banks and rebuilt cards, bridge update
+# jobs, uploads, supply events and by default the card archive.
+#
+# By default that is /data, the add-on's own persistent storage, which
+# survives an update but is not reachable from the file editor, Samba or
+# share. The data_dir option puts it under /share, /config (the add-on's
+# config folder) or /media instead. An install that never sets the option
+# behaves exactly as before, in /data.
+#
+# When files have to move, hms-cpap's move mode moves them: it prints its
+# progress here (the Log tab) and serves a progress page on the web port until
+# it is done. It never overwrites a file that exists at the destination, and
+# it leaves options.json, a copy of config.json and the marker in /data.
+HOME_DIR=/data
+MARKER="$HOME_DIR/.data_dir_moved"
+CONFIG_DIR="$HOME_DIR"
+DATA_DIR_WANTED=$(opt '.data_dir' '')
+while [ "${#DATA_DIR_WANTED}" -gt 1 ] && [ "${DATA_DIR_WANTED%/}" != "$DATA_DIR_WANTED" ]; do
+    DATA_DIR_WANTED=${DATA_DIR_WANTED%/}
+done
+
+# Anywhere else would land in the container and be lost on the next recreate.
+data_dir_allowed() {
+    case "$1" in
+        */../*|*/..|*/./*|*/.) return 1 ;;
+        /share|/share/*|/config|/config/*|/media|/media/*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+data_dir_writable() {
+    mkdir -p "$1" 2>/dev/null || return 1
+    probe="$1/.hms_cpap_write_test.$$"
+    ( : > "$probe" ) 2>/dev/null || return 1
+    rm -f "$probe"
+}
+
+# A directory that cannot be used: this run keeps its data in /data, says so
+# here, and tells the service, whose pages show a banner naming both.
+fall_back() {
+    echo "[cpapdash] WARNING: data_dir $DATA_DIR_WANTED $1."
+    echo "[cpapdash] WARNING: this run keeps its data in $HOME_DIR. Restart the add-on once $DATA_DIR_WANTED can be written."
+    export HMS_CPAP_DATA_DIR_FALLBACK="$DATA_DIR_WANTED"
+    CONFIG_DIR="$HOME_DIR"
+}
+
+# A move that does not complete counts as a directory that cannot be written.
+move_to_wanted() {
+    echo "[cpapdash] moving the data directory from $1 to $DATA_DIR_WANTED"
+    if /usr/local/bin/hms_cpap --move-data "$1" "$DATA_DIR_WANTED" --port 8893; then
+        CONFIG_DIR="$DATA_DIR_WANTED"
+    else
+        fall_back "could not take the files from $1"
+    fi
+}
+
+MARKED=$(head -n 1 "$MARKER" 2>/dev/null || true)
+if [ -n "$DATA_DIR_WANTED" ]; then
+    if ! data_dir_allowed "$DATA_DIR_WANTED"; then
+        fall_back "is not under /share, /config or /media"
+    elif ! data_dir_writable "$DATA_DIR_WANTED"; then
+        fall_back "cannot be created or written"
+    else
+        # The real path, which is what the marker holds, and checked again so
+        # a symbolic link cannot lead out of the three places.
+        DATA_DIR_WANTED=$(cd "$DATA_DIR_WANTED" && pwd -P)
+        if ! data_dir_allowed "$DATA_DIR_WANTED"; then
+            fall_back "is not under /share, /config or /media"
+        elif [ -f "$DATA_DIR_WANTED/config.json" ]; then
+            if [ "$MARKED" = "$DATA_DIR_WANTED" ]; then
+                # This install moved here before. Whatever a fallback run left
+                # in /data and is not here yet moves across; nothing here is
+                # overwritten.
+                move_to_wanted "$HOME_DIR"
+            else
+                # Already holds a configuration: used as it is, /data untouched.
+                CONFIG_DIR="$DATA_DIR_WANTED"
+            fi
+        elif [ -n "$MARKED" ] && [ "$MARKED" != "$DATA_DIR_WANTED" ] && [ -f "$MARKED/config.json" ]; then
+            # The option changed from one directory to another.
+            move_to_wanted "$MARKED"
+        elif [ -f "$HOME_DIR/config.json" ]; then
+            # The first move out of /data.
+            move_to_wanted "$HOME_DIR"
+        else
+            # A fresh install in the chosen directory.
+            CONFIG_DIR="$DATA_DIR_WANTED"
+        fi
+    fi
+fi
+
+# Saved paths follow the move: a local_dir sitting inside a data directory
+# this install used before (/data, or the one the marker names) points at the
+# same place inside the one in use. Only when the option is set: cleared, the
+# files stay where they are and so do the paths to them. MARKED is the marker
+# as it was before this start's move, which named the directory moved from.
+PREVIOUS_DIR_1=""
+PREVIOUS_DIR_2=""
+if [ -n "$DATA_DIR_WANTED" ]; then
+    [ "$CONFIG_DIR" != "$HOME_DIR" ] && PREVIOUS_DIR_1="$HOME_DIR"
+    [ -n "$MARKED" ] && [ "$MARKED" != "$CONFIG_DIR" ] && PREVIOUS_DIR_2="$MARKED"
+fi
+echo "[cpapdash] data directory: $CONFIG_DIR"
+
+CONFIG="$CONFIG_DIR/config.json"
+
+# The service keeps everything under this directory, so it is always passed
+# on: the image's own default is not a place this add-on keeps anything.
+export HMS_CPAP_DATA_DIR="$CONFIG_DIR"
 
 SOURCE=$(opt '.source' 'ezshare')
 EZSHARE_URL=$(opt '.ezshare_url' '')
@@ -304,10 +407,23 @@ jq -n \
 # Except a database server under type sqlite: leaving it out of the overlay
 # keeps the saved one, and the service, seeing a host, opens that server and
 # refuses to start when it is gone. So it is dropped again after the merge.
-jq -s '.[0] * .[1]
+#
+# SDD-067: and a local_dir inside a data directory used before follows it into
+# the one in use (see PREVIOUS_DIR above). archive_dir needs nothing: typed in
+# the options it wins, and otherwise it is always the one in use.
+jq -s \
+    --arg old1 "$PREVIOUS_DIR_1" \
+    --arg old2 "$PREVIOUS_DIR_2" \
+    --arg now "$CONFIG_DIR" \
+    'def follow($old):
+        if $old == "" or type != "string" then .
+        elif . == $old or startswith($old + "/") then $now + ltrimstr($old)
+        else . end;
+    .[0] * .[1]
     | if .database.type == "sqlite"
       then .database |= del(.host, .port, .name, .user, .password)
-      else . end' \
+      else . end
+    | if has("local_dir") then .local_dir |= (follow($old1) | follow($old2)) else . end' \
     "$BASE" "$CONFIG_DIR/.config.overlay.json" > "$CONFIG"
 rm -f "$BASE" "$CONFIG_DIR/.config.overlay.json"
 
