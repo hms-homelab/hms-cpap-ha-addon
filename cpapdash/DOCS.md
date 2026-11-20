@@ -186,13 +186,48 @@ trusted.
 
 Type the address alone, with no port: the bridge always connects to port
 8894. The add-on publishes 8894 as 8894 by default; leave it at 8894, since a
-bridge reaches no other port. Only the stream answers there, not the web UI or
-the API, and it has no login: keep it on your local network. If no Sleep
-Bridge points here, you can clear the port in the add-on's Network panel.
+bridge reaches no other port. Only the Sleep Bridge stream and the OSCAR helper
+(below) answer there, not the web UI or the API. The bridge stream has no
+login: keep the port on your local network. If no Sleep Bridge and no OSCAR
+helper points here, you can clear the port in the add-on's Network panel.
 
 The rebuilt card lands in `/data/sleepbridge/<bridge>/`, in the machine's own
 card layout (a ResMed AirSense or a BMC / React Health Luna). The protocol is
 documented in hms-cpap's `docs/SLEEP_BRIDGE_LOCAL_STREAM.md`.
+
+## DreamStation 2 cards (OSCAR on a home PC)
+
+A DreamStation 2 writes an encrypted card. hms-cpap reads it with OSCAR, and
+OSCAR cannot run inside the add-on. A Windows, macOS or Linux PC at home that
+has OSCAR 2.1.1 does the reading for it.
+
+hms-cpap never decrypts the card itself and never ships OSCAR. It uses the
+OSCAR you installed on that PC.
+
+On that PC, once:
+
+1. In OSCAR, make a profile named `hms-cpap`.
+2. Install hms-cpap. In the first window, choose **Read OSCAR for hms-cpap**.
+   On Linux, run `sudo ./install.sh --oscar-helper` instead.
+3. The helper finds the add-on on your network by itself. If it cannot, it
+   asks for your Home Assistant's address. Type the address alone, with no
+   port.
+
+The helper connects out to the add-on on port 8894, the same port as the
+Sleep Bridge, so keep 8894 published. The PC opens no port of its own.
+
+The first PC to connect is remembered, with no code to type. Others are
+refused. The Devices page shows **OSCAR helper:** and the PC's name, with
+**Forget** to replace it with another PC.
+
+Then there is nothing to do each night. A night is read when the machine's
+files for it arrive, when you press **Read now**, or when the PC comes back
+on. If the PC is off, the Devices page says "Waiting for" the PC, and the
+night is read when it is on again.
+
+In the add-on, CpapDash's Settings, Source opens a Philips card on **On a home
+PC**, with these steps and, once it has connected, the PC's name. "On this
+computer" cannot be used in the add-on.
 
 ## Data
 
