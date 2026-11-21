@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.0.1
+
+### Changed
+- **The local sleep model comes with the add-on and is on by default.** Each night's summary is written inside Home Assistant with no network and no download. An install that switched it off in Settings stays off.
+- **Every night gets its summary**, not only a bridge's: card uploads, re-reads, Bluetooth nights and nights read through a Mule & Miner. A night is summarized again only when its data changed.
+
 ## 7.0.0
 
 The full list is in [hms-cpap's CHANGELOG](https://github.com/hms-homelab/hms-cpap/blob/master/CHANGELOG.md#700---2026-11-21). The parts that matter in the add-on:
