@@ -1,5 +1,24 @@
 # Changelog
 
+## 7.0.0
+
+The full list is in [hms-cpap's CHANGELOG](https://github.com/hms-homelab/hms-cpap/blob/master/CHANGELOG.md#700---2026-11-21). The parts that matter in the add-on:
+
+### Added
+- **Each machine is read on its own clock** (#79). Each machine's card on the Devices page has a Machine clock: same as this computer, a fixed offset, or a named time zone, and "Re-read my nights" reads the archived nights again on it. A night across a daylight saving change keeps every minute.
+- **A DreamStation 2 card is read by an OSCAR helper on a home PC.** The add-on cannot run OSCAR itself; a Windows, macOS or Linux PC at home with OSCAR 2.1.1 reads the card for it, and the Devices page shows the helper.
+- **The local sleep model**: each night's summary written inside Home Assistant, with no network, checked against the night's own numbers (off by default; Settings, Local Sleep Model).
+- **Garmin SpO2 as an oximetry source**, next to the O2 Ring, and every recording says where it came from (#76).
+- **An AirSense 11 night the stream missed is filled from the machine's stored pages** (#61, #62).
+- **Usage target** in Settings (4 hours by default) for the dashboard's usage goal.
+
+### Fixed
+- **A Mule & Miner that reads a card can be switched back to the CpapDash cloud** from the Devices page (#100).
+- **An SD card import no longer reopens finished nights** (#85).
+- **A DreamStation 2 over Bluetooth reads its events** (#99; through a Mule & Miner, use miner firmware 6.0.2 or newer).
+- **DreamStation 2 Bluetooth on Linux** finds the machine's one characteristic for both write and notify (#87).
+- **An AirCurve ASV's target ventilation** is kept from Bluetooth. Reported and tested by Jason.
+
 ## 6.4.6
 
 ### Fixed
