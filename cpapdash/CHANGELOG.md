@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.0.2
+
+### Fixed
+- **Report charts are drawn in the add-on.** The image now carries gnuplot and the fonts the charts use, so a generated report has its charts with no manual install that a restart or update would remove. Thanks to Robert for the report.
+
+### Changed
+- Settings shows how many sleep models are loaded (thanks @rccoleman).
+
 ## 7.0.1
 
 ### Changed
