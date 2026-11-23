@@ -1,5 +1,23 @@
 # Changelog
 
+## 7.1.0
+
+The full list is in [hms-cpap's CHANGELOG](https://github.com/hms-homelab/hms-cpap/blob/master/CHANGELOG.md#710---2026-11-22). The parts that matter in the add-on:
+
+### Added
+- **Compliance and Clinician reports**, as CpapDash's, from the add-on's own database: the compliance check against a rule you set (remembered between reports) and the clinician pages with the statistics, the monthly page and the settings changes.
+- **A night with only myAir's daily figures, or only the card's daily summary, gets its summary**, written by the local sleep model's checked template or your configured AI, and marked as summary only.
+- **An encrypted DreamStation 2 card can be uploaded** when the OSCAR helper on a home PC is paired: it is read through that OSCAR.
+- **Settings: "Split the waveform at stream gaps"** for AirSense 11 Bluetooth streams (off by default; thanks @djbill99-hue).
+
+### Changed
+- "Regenerate AI summary" always writes a new text.
+
+### Fixed
+- A DreamStation 2 night read through OSCAR is dated on the machine's clock, and the central apnea index counts clear airway apneas.
+- A refused upload leaves nothing behind.
+- The session page's metric cards are one size (thanks @rccoleman).
+
 ## 7.0.2
 
 ### Fixed
