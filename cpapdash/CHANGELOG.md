@@ -1,5 +1,56 @@
 # Changelog
 
+## 7.1.2
+
+### Fixed
+- **The CpapDash stream sends your machine's card and nothing else.** With
+  the stream on, 7.1.1 walked the archive folder as a card root even when the
+  source was a local folder, and sent every file at its root. An archive
+  holding a 190 MB `Archive.zip` ran a 2 GB Home Assistant box out of memory
+  (the add-on was killed twice), and a previous machine's files lying there
+  (a Luna's) went to CpapDash as the current machine's. Now:
+  - Only the configured source's card is read: the archive for ez Share and
+    FlashAir, the local folder for a local source, never both. The Bluetooth,
+    Sleep Bridge and oximetry folders are unchanged. A folder no longer
+    configured (after a source switch) is not read either.
+  - Only the files of that card's layout are sent: for ResMed `STR.edf`,
+    `Identification.*`, `journal.jnl`, `SETTINGS/` and `DATALOG/<date>/`; for
+    a DreamStation `P-SERIES/`; for a Luna its own `<serial>.NNN`, `.EVT`,
+    `.IDX`, `.LOG` and `.USR`. A zip, a note or another machine's files beside
+    the card are never read or sent.
+  - Every file is sent in pieces of at most 64 KB, its md5 worked out as it
+    goes, so a file of any size never sits in memory whole.
+
+### Fixed
+- **AirSense 11 over Bluetooth uses only your own machine.** With
+  `airsense11_ble.address` blank (the default), the Bluetooth loop connected
+  to any ResMed machine advertising. A neighbour's machine in range was
+  connected to every 30 seconds, each time refusing the pairing, and the
+  owner's nights were not streamed. Now:
+  - After a pairing, the machine's address is saved in
+    `airsense11_ble.address`, and its serial in the new
+    `airsense11_ble.paired_serial` after its first session. Only that machine
+    is connected to from then on. On an install paired before 7.1.1, the
+    first machine that opens a session with the pairing is saved (said once
+    in the log). An address set by hand is never replaced.
+  - Another ResMed machine in range is named once in the log and never
+    connected to. One that refuses the pairing is passed over for the rest of
+    the run instead of being asked again every 30 seconds.
+  - When the saved machine itself no longer knows the pairing, it is said
+    once ("pair it again from the Devices page"), the status and Settings
+    show it, and the machine is not asked again until it is paired again.
+    Removing the pairing keeps the saved machine, so pairing again goes to
+    it.
+  - Settings, AirSense 11 over Bluetooth, shows the paired machine (serial
+    and address), a lost pairing, and other ResMed machines seen nearby
+    ("only yours is used"), with **Pair a different machine** (an inline
+    confirm; `DELETE /api/airsense11/ble/machine`), in the five UI languages.
+    `GET /api/airsense11/ble/status` carries `paired_machine`,
+    `pairing_lost` and `others_nearby`.
+  - Saving Settings no longer sends the address back, so a page opened
+    before the machine was saved cannot blank it.
+  Closes #108 (thanks @TLaren).
+
 ## 7.1.1
 
 ### Fixed
