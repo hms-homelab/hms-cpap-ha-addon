@@ -1,5 +1,37 @@
 # Changelog
 
+## 7.3.0
+
+### Added
+- **Forget this machine, for a Mule & Miner's AirSense 11 (#108).** On the
+  Devices page, a Mule & Miner in local mode now shows which AirSense 11 it
+  is paired with, and a "Forget this machine" action with the usual inline
+  confirm. The unit lets go of the machine and the pairing's keys, so a
+  different AirSense 11 can be paired (under More). It needs firmware 6.0.3
+  on both the mule and the miner; an older unit is told to update first.
+  The local socket takes it as `as11_forget` (`keys`, default true); see
+  docs/MULE_LOCAL_STREAM.md.
+
+## 7.2.1
+
+### Fixed
+- **An AirSense 11 night over Bluetooth fills the live sensors (#119, #115).**
+  Live therapy, Live event count, Live AHI and Live last event now get their
+  values on a Bluetooth night, as they do from a Mule & Miner, and the live
+  AHI counts over the hours the night's blocks cover: one event no longer
+  reads 12.0/h all night. The four sensors are announced on every install
+  with MQTT on, and Live therapy starts off rather than unknown; a machine
+  found already streaming after a restart is stated as on. Thanks @rccoleman.
+- **The ring's night reaches Home Assistant when its file lands (#118).**
+  The ring's average SpO2, heart rate, ODI and desaturation count were
+  published only at the end of the nightly summary, under the summary's own
+  day, which could be a day off the ring's night or run before the ring's
+  file was stored, so Home Assistant kept the previous night's figures. The
+  figures now go out as each ring file read over Bluetooth is stored, under
+  the ring's own night. Thanks @rccoleman.
+- **The sessions list reads only the ring's own recordings** for each night's
+  SpO2 and heart rate, as every other oximetry reader does (#116 follow-up).
+
 ## 7.2.0
 
 ### Added
