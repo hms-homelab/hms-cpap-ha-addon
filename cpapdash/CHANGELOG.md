@@ -1,5 +1,19 @@
 # Changelog
 
+## 7.3.1
+
+### Fixed
+- **A reparse no longer deletes the night before, and a missing night is
+  imported again (#126).** A night that starts after midnight is stored
+  under the card folder its files are in (the card's folders run noon to
+  noon), not under the date it started on. A reparse deletes only the
+  sessions of the night it re-reads, so a night stored the old way is kept.
+  A night missing from the database whose folder was already done is listed
+  and fetched again on the next history catch-up, instead of yielding
+  nothing. On start, paths stored the old way are put under the folder their
+  files are in (paths only, nothing is moved or deleted), so the SleepHQ
+  export finds those nights' files again. Thanks @nathanzm.
+
 ## 7.3.0
 
 ### Added
